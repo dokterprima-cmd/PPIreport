@@ -118,10 +118,38 @@
         ];
 
         const AUDIT_BUNDLES = {
-            CAUTI: { title: 'Bundle CAUTI (ISK)', columns: [{ key: 'indikasi', label: 'Indikasi' }, { key: 'closedSystem', label: 'Closed Sys' }, { key: 'bagBawah', label: 'Bag Bawah' }, { key: 'selangAman', label: 'Slg Aman' }, { key: 'reassess', label: 'Reassess' }, { key: 'perawatan', label: 'Rawat Harian' }] },
-            CLABSI: { title: 'Bundle CLABSI (IADP)', columns: [{ key: 'indikasi', label: 'Indikasi' }, { key: 'maxBarrier', label: 'Max Barrier' }, { key: 'antisepsis', label: 'Antisepsis' }, { key: 'dressing', label: 'Dressing' }, { key: 'scrubHub', label: 'Scrub Hub' }, { key: 'reassess', label: 'Reassess' }] },
-            VAP: { title: 'Bundle VAP', columns: [{ key: 'hob', label: 'HOB 30°' }, { key: 'oralHygiene', label: 'Oral Hyg' }, { key: 'cuff', label: 'Cuff Pres' }, { key: 'satSbt', label: 'SAT/SBT' }, { key: 'waterTrap', label: 'Water Trap' }, { key: 'extubasi', label: 'Extubasi' }] },
-            IDO: { title: 'Bundle IDO', columns: [{ key: 'profilaksis', label: 'Profilaksis' }, { key: 'dosis', label: 'Dosis/Jenis' }, { key: 'abStop', label: 'Ab Stop' }, { key: 'normotermi', label: 'Normotermi' }, { key: 'gd', label: 'GD Kntrl' }, { key: 'ssc', label: 'SSC' }] }
+            CAUTI: { title: 'Bundle CAUTI (ISK)', columns: [
+                { key: 'indikasi', label: 'Indikasi', desc: 'Indikasi pemasangan kateter terdokumentasi di CPPT / rekam medis (bukan hanya kenyamanan pasien)' }, 
+                { key: 'closedSystem', label: 'Closed Sys', desc: 'Sistem drainase tertutup (closed system) terpasang dan tidak ada kebocoran' }, 
+                { key: 'bagBawah', label: 'Bag Bawah', desc: 'Posisi drainage bag: selalu di bawah pinggang pasien — tidak pernah di lantai atau lebih tinggi dari kandung kemih' }, 
+                { key: 'selangAman', label: 'Slg Aman', desc: 'Selang kateter tidak tertekuk / terjepit / tersumbat' }, 
+                { key: 'reassess', label: 'Reassess', desc: 'Re-assessment kebutuhan kateter dilakukan setiap hari — bila tidak diperlukan, kateter dicabut' }, 
+                { key: 'perawatan', label: 'Rawat Harian', desc: 'Perawatan kateter harian dilakukan (meatus uretra dibersihkan sesuai SPO)' }
+            ] },
+            CLABSI: { title: 'Bundle CLABSI (IADP)', columns: [
+                { key: 'indikasi', label: 'Indikasi', desc: 'Indikasi pemasangan CVC / line sentral terdokumentasi dan dievaluasi setiap hari' }, 
+                { key: 'maxBarrier', label: 'Max Barrier', desc: 'Maximal Sterile Barrier Precautions saat insersi: cap, masker, gaun steril, sarung tangan steril, draping steril seluruh tubuh' }, 
+                { key: 'antisepsis', label: 'Antisepsis', desc: 'Antisepsis kulit menggunakan chlorhexidine ≥ 0.5% dalam alkohol — dibiarkan kering sebelum insersi' }, 
+                { key: 'dressing', label: 'Dressing', desc: 'Dressing / verban insersi bersih, kering, dan utuh — diganti sesuai jadwal atau segera bila kotor/basah' }, 
+                { key: 'scrubHub', label: 'Scrub Hub', desc: 'Port / hub line dibersihkan dengan alkohol 70% minimal 15 detik setiap kali sebelum akses (scrub the hub)' }, 
+                { key: 'reassess', label: 'Reassess', desc: 'Kebutuhan CVC dievaluasi setiap hari — line dicabut segera bila tidak diperlukan' }
+            ] },
+            VAP: { title: 'Bundle VAP', columns: [
+                { key: 'hob', label: 'HOB 30°', desc: 'Posisi kepala tempat tidur 30–45° (semi-recumbent) — kecuali ada kontraindikasi medis' }, 
+                { key: 'oralHygiene', label: 'Oral Hyg', desc: 'Oral hygiene dilakukan minimal setiap 4 jam menggunakan chlorhexidine 0.12% atau sesuai protokol' }, 
+                { key: 'cuff', label: 'Cuff Pres', desc: 'Tekanan cuff (manset) ETT dipertahankan 20–30 cmH₂O — diperiksa dan dicatat setiap shift' }, 
+                { key: 'satSbt', label: 'SAT/SBT', desc: 'Sedation vacation (SAT) dan Spontaneous Breathing Trial (SBT) dilakukan setiap hari bila pasien memenuhi kriteria' }, 
+                { key: 'waterTrap', label: 'Water Trap', desc: 'Air dalam water trap / humidifier dikosongkan secara berkala agar tidak masuk ke jalan napas' }, 
+                { key: 'extubasi', label: 'Extubasi', desc: 'Kebutuhan ventilator mekanik dievaluasi setiap hari untuk rencana extubasi sedini mungkin' }
+            ] },
+            IDO: { title: 'Bundle IDO', columns: [
+                { key: 'profilaksis', label: 'Profilaksis', desc: 'Profilaksis antibiotik diberikan dalam 60 menit sebelum insisi (30 menit untuk fluorokuinolon / vankomisin)' }, 
+                { key: 'dosis', label: 'Dosis/Jenis', desc: 'Jenis dan dosis antibiotik profilaksis sesuai panduan / formularium RS' }, 
+                { key: 'abStop', label: 'Ab Stop', desc: 'Antibiotik profilaksis dihentikan dalam 24 jam pasca operasi (48 jam untuk operasi jantung)' }, 
+                { key: 'normotermi', label: 'Normotermi', desc: 'Suhu tubuh pasien terjaga (normotermia intraoperatif): target 36–37.5°C' }, 
+                { key: 'gd', label: 'GD Kntrl', desc: 'Kadar glukosa darah intraoperatif dan 48 jam pasca operasi terkontrol (< 200 mg/dL)' }, 
+                { key: 'ssc', label: 'SSC', desc: 'Surgical Safety Checklist (Sign-In, Time-Out, Sign-Out) dilengkapi dengan benar' }
+            ] }
         };
 
         const SURVEILANS_CONFIG = {
@@ -346,13 +374,32 @@
             const [uUnit, setUUnit] = useState('');
             const [uPass, setUPass] = useState('');
             const [newUnit, setNewUnit] = useState('');
+            const [editUserId, setEditUserId] = useState(null);
 
             const handleAddUser = (e) => {
                 e.preventDefault();
                 if(uName && uPass) {
-                    setUsers([...users, { id: Date.now(), name: uName, role: uRole, unit: uRole === 'IPCLN' ? uUnit : 'ALL', password: uPass }]);
-                    setUName(''); setUPass('');
+                    if (editUserId) {
+                        setUsers(users.map(u => u.id === editUserId ? { ...u, name: uName, role: uRole, unit: uRole === 'IPCLN' ? uUnit : 'ALL', password: uPass } : u));
+                        setEditUserId(null);
+                    } else {
+                        setUsers([...users, { id: Date.now(), name: uName, role: uRole, unit: uRole === 'IPCLN' ? uUnit : 'ALL', password: uPass }]);
+                    }
+                    setUName(''); setUPass(''); setUUnit(''); setURole('IPCLN');
                 }
+            };
+
+            const handleEditClick = (user) => {
+                setEditUserId(user.id);
+                setUName(user.name);
+                setURole(user.role);
+                setUUnit(user.unit === 'ALL' ? '' : user.unit);
+                setUPass(user.password);
+            };
+
+            const handleCancelEdit = () => {
+                setEditUserId(null);
+                setUName(''); setUPass(''); setUUnit(''); setURole('IPCLN');
             };
 
             const handleAddUnit = (e) => {
@@ -377,11 +424,11 @@
                     {activeTab === 'users' && (
                         <div className="grid md:grid-cols-3 gap-8">
                             <div className="md:col-span-1 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                <h3 className="text-sm font-bold text-slate-700 mb-4">Tambah Pengguna Baru</h3>
+                                <h3 className="text-sm font-bold text-slate-700 mb-4">{editUserId ? 'Edit Pengguna' : 'Tambah Pengguna Baru'}</h3>
                                 <form onSubmit={handleAddUser} className="space-y-3">
                                     <div><label className="text-xs font-semibold">Nama Lengkap</label><input type="text" required value={uName} onChange={e=>setUName(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none focus:border-teal-500" /></div>
                                     <div><label className="text-xs font-semibold">Role Akses</label>
-                                        <select value={uRole} onChange={e=>setURole(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none bg-white">
+                                        <select value={uRole} onChange={e=>{setURole(e.target.value); if(e.target.value!=='IPCLN') setUUnit('ALL');}} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none bg-white">
                                             <option value="IPCLN">IPCLN (Perawat Ruangan)</option><option value="IPCN">IPCN (Komite PPI)</option><option value="MANAJEMEN">MANAJEMEN (Direksi)</option>
                                         </select>
                                     </div>
@@ -391,8 +438,11 @@
                                             {units.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
                                         </select>
                                     </div>}
-                                    <div><label className="text-xs font-semibold">Password Default</label><input type="text" required value={uPass} onChange={e=>setUPass(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none focus:border-teal-500" /></div>
-                                    <button type="submit" className="w-full bg-teal-600 text-white font-bold py-2 rounded text-sm mt-2 hover:bg-teal-700"><i className="fa-solid fa-plus mr-1"></i> Tambah User</button>
+                                    <div><label className="text-xs font-semibold">Password</label><input type="text" required value={uPass} onChange={e=>setUPass(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none focus:border-teal-500" /></div>
+                                    <div className="flex space-x-2 mt-2">
+                                        <button type="submit" className="flex-1 bg-teal-600 text-white font-bold py-2 rounded text-sm hover:bg-teal-700 transition"><i className={`fa-solid ${editUserId ? 'fa-save' : 'fa-plus'} mr-1`}></i> {editUserId ? 'Simpan' : 'Tambah'}</button>
+                                        {editUserId && <button type="button" onClick={handleCancelEdit} className="flex-1 bg-slate-300 text-slate-700 font-bold py-2 rounded text-sm hover:bg-slate-400 transition"><i className="fa-solid fa-times mr-1"></i> Batal</button>}
+                                    </div>
                                 </form>
                             </div>
                             <div className="md:col-span-2 overflow-x-auto">
@@ -403,7 +453,10 @@
                                             <tr key={u.id} className="hover:bg-slate-50">
                                                 <td className="p-3 font-medium">{u.name}</td><td className="p-3"><span className="bg-slate-200 px-2 py-1 rounded text-xs">{u.role}</span></td>
                                                 <td className="p-3">{u.unit}</td><td className="p-3 text-slate-400">••••{u.password.slice(-2)}</td>
-                                                <td className="p-3 text-center"><button onClick={() => deleteUser(u.id, users.filter(x=>x.id!==u.id))} className="text-red-500 hover:bg-red-50 p-1 rounded"><i className="fa-solid fa-trash"></i></button></td>
+                                                <td className="p-3 text-center space-x-2">
+                                                    <button onClick={() => handleEditClick(u)} className="text-blue-500 hover:bg-blue-50 p-1 rounded transition" title="Edit User"><i className="fa-solid fa-pen-to-square"></i></button>
+                                                    <button onClick={() => deleteUser(u.id, users.filter(x=>x.id!==u.id))} className="text-red-500 hover:bg-red-50 p-1 rounded transition" title="Hapus User"><i className="fa-solid fa-trash"></i></button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -701,10 +754,24 @@
 
             return (
                 <div>
-                    <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                    <div className="overflow-x-auto border border-slate-200 rounded-lg min-h-[250px]">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-50"><tr><th className="p-3 w-48">Pasien</th>{config.columns.map(c=><th key={c.key} className="p-2 text-center text-xs font-bold">{c.label}</th>)}<th className="p-2 text-center">%</th><th></th></tr></thead>
-                            <tbody className="divide-y divide-slate-200">
+                            <thead className="bg-slate-50">
+                                <tr>
+                                    <th className="p-3 w-48">Pasien</th>
+                                    {config.columns.map(c=>(
+                                        <th key={c.key} className="p-2 text-center text-xs font-bold relative group cursor-help">
+                                            <span className="border-b border-dotted border-slate-400">{c.label}</span>
+                                            <div className="hidden group-hover:block absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 p-3 bg-slate-800 text-white text-[11px] rounded shadow-lg z-50 font-normal text-left whitespace-normal leading-relaxed before:content-[''] before:absolute before:bottom-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-b-slate-800">
+                                                {c.desc}
+                                            </div>
+                                        </th>
+                                    ))}
+                                    <th className="p-2 text-center">%</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200 bg-white">
                                 {rows.length === 0 && (<tr><td colSpan={config.columns.length + 3} className="px-4 py-8 text-center text-slate-400 italic">Klik tombol "Tambah Pasien" untuk mulai observasi bundle.</td></tr>)}
                                 {rows.map((r,i) => (
                                     <tr key={r.id}>
