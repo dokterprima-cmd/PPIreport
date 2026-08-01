@@ -3,882 +3,384 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem PPI Terpadu - HAIs</title>
+    <title>Sistem Surveilans & Audit HAIs</title>
     
-    <!-- Tailwind CSS (Untuk Styling) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- FontAwesome (Untuk Icon) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Babel (Untuk menerjemahkan JSX ke JavaScript murni di browser) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-is@18/umd/react-is.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/recharts@2.1.9/umd/Recharts.js"></script>
     
-    <!-- Recharts (Untuk Grafik Dashboard) -->
-    <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
-    <script src="https://unpkg.com/react-is/umd/react-is.production.min.js"></script>
-    <script src="https://unpkg.com/recharts@2.1.9/umd/Recharts.js"></script>
-    
-    <!-- Firebase Compat (Database Cloud) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        .tooltip-container { position: relative; display: inline-block; cursor: help; border-bottom: 1px dotted #666; }
+        .tooltip-container .tooltip-text {
+            visibility: hidden; width: 250px; background-color: #1f2937; color: #fff; text-align: center;
+            border-radius: 6px; padding: 8px; position: absolute; z-index: 50; bottom: 125%; left: 50%;
+            margin-left: -125px; opacity: 0; transition: opacity 0.3s; font-size: 12px; font-weight: normal; line-height: 1.4;
+        }
+        .tooltip-container .tooltip-text::after {
+            content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px;
+            border-width: 5px; border-style: solid; border-color: #1f2937 transparent transparent transparent;
+        }
+        .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans antialiased">
+<body class="bg-gray-50 text-gray-800">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
-        const { Bar, XAxis, YAxis, CartesianGrid, Tooltip: RechartsTooltip, Legend, ResponsiveContainer, Line, Cell, ComposedChart } = window.Recharts;
+        const { useState, useEffect } = React;
+        const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip: RechartsTooltip, Legend, ResponsiveContainer, ReferenceLine } = window.Recharts;
 
-        // ============================================================================
-        // KONFIGURASI FIREBASE (GANTI DENGAN KREDENSIAL FIRESTORE ANDA)
-        // ============================================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyAF8g0KAw1MNqqOiLYJQnoQv4pdUY78BvI",
-            authDomain: "ppireport.firebaseapp.com",
-            projectId: "ppireport",
-            storageBucket: "ppireport.firebasestorage.app",
-            messagingSenderId: "301333708805",
-            appId: "1:301333708805:web:58385ef9e30aa94a711c6c",
-        };
+        const HeaderTooltip = ({ title, desc }) => (
+            <div className="tooltip-container text-xs font-bold text-gray-700">
+                {title}
+                <span className="tooltip-text">{desc}</span>
+            </div>
+        );
 
-        let db = null;
-        const isFirebaseConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY";
-
-        if (isFirebaseConfigured && !window.firebase.apps.length) {
-            try {
-                window.firebase.initializeApp(firebaseConfig);
-                db = window.firebase.firestore();
-                console.log("Firebase tersambung.");
-            } catch (error) {
-                console.error("Gagal inisialisasi Firebase:", error);
-            }
-        }
-
-        function useAppDatabase(collectionName, initialData) {
-            const [data, setData] = useState(initialData);
-
-            useEffect(() => {
-                if (isFirebaseConfigured && db) {
-                    const unsub = db.collection(collectionName).onSnapshot((snapshot) => {
-                        const items = [];
-                        snapshot.forEach((doc) => items.push({ id: doc.id, ...doc.data() }));
-                        setData(items.length > 0 ? items : initialData);
-                    });
-                    return () => unsub();
-                } else {
-                    try {
-                        const item = window.localStorage.getItem(`ppi_${collectionName}`);
-                        if (item) setData(JSON.parse(item));
-                    } catch (error) {
-                        console.error(error);
-                    }
-                }
-            }, [collectionName]);
-
-            const saveData = async (newDataArray) => {
-                if (isFirebaseConfigured && db) {
-                   for (const item of newDataArray) {
-                       await db.collection(collectionName).doc(String(item.id)).set(item);
-                   }
-                } else {
-                   setData(newDataArray);
-                   window.localStorage.setItem(`ppi_${collectionName}`, JSON.stringify(newDataArray));
-                }
-            };
-
-            const deleteItem = async (id, updatedArray) => {
-                if (isFirebaseConfigured && db) {
-                    await db.collection(collectionName).doc(String(id)).delete();
-                } else {
-                    setData(updatedArray);
-                    window.localStorage.setItem(`ppi_${collectionName}`, JSON.stringify(updatedArray));
-                }
-            }
-
-            return [data, saveData, deleteItem];
-        }
-
-        const TARGETS = { ISK: 4.7, IADP: 3.5, VAP: 5.8, PLEBITIS: 5.0, IDO: 2.0 };
-
-        const DEFAULT_USERS = [
-            { id: 1, name: 'Suster Rina', role: 'IPCLN', unit: 'ICU', password: '123' },
-            { id: 2, name: 'Suster Budi', role: 'IPCLN', unit: 'Mawar', password: '123' },
-            { id: 3, name: 'IPCN Ani', role: 'IPCN', unit: 'ALL', password: '123' },
-            { id: 4, name: 'Direktur Medis', role: 'MANAJEMEN', unit: 'ALL', password: '123' }
-        ];
-
-        const DEFAULT_UNITS = [
-            { id: 'u1', name: 'ICU' }, { id: 'u2', name: 'Mawar' }, 
-            { id: 'u3', name: 'Melati' }, { id: 'u4', name: 'IBS' }
-        ];
-
-        const AUDIT_BUNDLES = {
-            CAUTI: { title: 'Bundle CAUTI (ISK)', columns: [{ key: 'indikasi', label: 'Indikasi' }, { key: 'closedSystem', label: 'Closed Sys' }, { key: 'bagBawah', label: 'Bag Bawah' }, { key: 'selangAman', label: 'Slg Aman' }, { key: 'reassess', label: 'Reassess' }, { key: 'perawatan', label: 'Rawat Harian' }] },
-            CLABSI: { title: 'Bundle CLABSI (IADP)', columns: [{ key: 'indikasi', label: 'Indikasi' }, { key: 'maxBarrier', label: 'Max Barrier' }, { key: 'antisepsis', label: 'Antisepsis' }, { key: 'dressing', label: 'Dressing' }, { key: 'scrubHub', label: 'Scrub Hub' }, { key: 'reassess', label: 'Reassess' }] },
-            VAP: { title: 'Bundle VAP', columns: [{ key: 'hob', label: 'HOB 30°' }, { key: 'oralHygiene', label: 'Oral Hyg' }, { key: 'cuff', label: 'Cuff Pres' }, { key: 'satSbt', label: 'SAT/SBT' }, { key: 'waterTrap', label: 'Water Trap' }, { key: 'extubasi', label: 'Extubasi' }] },
-            IDO: { title: 'Bundle IDO', columns: [{ key: 'profilaksis', label: 'Profilaksis' }, { key: 'dosis', label: 'Dosis/Jenis' }, { key: 'abStop', label: 'Ab Stop' }, { key: 'normotermi', label: 'Normotermi' }, { key: 'gd', label: 'GD Kntrl' }, { key: 'ssc', label: 'SSC' }] }
-        };
-
-        const SURVEILANS_CONFIG = {
-            IDO: {
-                def: "Infeksi yang terjadi pada atau dekat lokasi insisi bedah dalam 30 hari pasca operasi (atau 90 hari untuk prosedur dengan implant), diklasifikasikan sebagai: Superfisial (S), Dalam/Deep (D), atau Organ/Space (O).",
-                kriteria: [
-                    "1. Superfisial (S): Infeksi kulit/subkutan di lokasi insisi dalam 30 hari. Tanda: nyeri/bengkak/kemerahan/panas + drainase purulen atau kultur positif.",
-                    "2. Dalam/Deep (D): Infeksi jaringan lunak dalam (fasia/otot) dalam 30 hari. Tanda: demam > 38°C + nyeri tekan + dehiscence/abses dalam.",
-                    "3. Organ/Space (O): Infeksi pada organ atau rongga tubuh yang dibuka/dimanipulasi saat operasi dalam 30/90 hari. Dibuktikan dengan kultur positif, abses, atau radiologi."
-                ],
-                cols: [ { k: 'tglOperasi', l: 'Tgl Operasi', t: 'date'}, { k: 'jenisOperasi', l: 'Jenis Operasi', t: 'text'}, { k: 'kelasOperasi', l: 'Kelas (I-IV)', t: 'select', opts: ['I (Bersih)', 'II (Bersih Terkontaminasi)', 'III (Terkontaminasi)', 'IV (Kotor)']}, { k: 'tglGejala', l: 'Tgl Gejala IDO', t: 'date'}, { k: 'klasifikasi', l: 'Klasifikasi IDO', t: 'select', opts: ['Superfisial (S)', 'Dalam (D)', 'Organ/Space (O)']}, { k: 'kultur', l: 'Kultur (+/-)', t: 'select', opts: ['Belum Ada', 'Positif (+)', 'Negatif (-)']}, { k: 'patogen', l: 'Patogen', t: 'text'} ]
-            },
-            ISK: {
-                def: "Infeksi saluran kemih yang terjadi pada pasien yang menggunakan kateter urin lebih dari 2 hari kalender (hari insersi = hari 1), dibuktikan dengan gejala klinis dan/atau kultur urin positif dengan ≥ 10⁵ CFU/mL.",
-                kriteria: [
-                    "1. Pasien terpasang kateter urin > 2 hari kalender pada saat onset gejala atau 1 hari sebelumnya.",
-                    "2. Setidaknya satu dari: demam > 38°C, urgensi berkemih, frekuensi, disuria, atau nyeri suprapubik.",
-                    "3. Kultur urin positif dengan ≥ 10⁵ CFU/mL dari ≤ 2 jenis mikroorganisme.",
-                    "4. Bukan ISK yang sudah ada sebelum kateter dipasang."
-                ],
-                cols: [ { k: 'tglPasang', l: 'Tgl Pasang', t: 'date'}, { k: 'tglLepas', l: 'Tgl Lepas', t: 'date'}, { k: 'tglGejala', l: 'Tgl Gejala ISK', t: 'date'}, { k: 'kultur', l: 'Hasil Kultur', t: 'select', opts: ['Belum Ada', 'Positif (+)', 'Negatif (-)']}, { k: 'patogen', l: 'Patogen', t: 'text'} ]
-            },
-            IADP: {
-                def: "Infeksi aliran darah yang terjadi pada pasien yang menggunakan central venous catheter (CVC) lebih dari 2 hari kalender, dibuktikan dengan hemokultur positif yang tidak berhubungan dengan infeksi di tempat lain (primary bloodstream infection).",
-                kriteria: [
-                    "1. Pasien terpasang CVC/line sentral > 2 hari kalender pada saat onset gejala atau 1 hari sebelumnya.",
-                    "2. Satu atau lebih hemokultur positif dari organisme yang bukan merupakan kontaminan umum.",
-                    "3. Untuk organisme kontaminan umum: ≥ 2 hemokultur positif dari sample berbeda dalam 2 hari.",
-                    "4. Bukan infeksi yang bersumber dari tempat lain (seperti UTI, pneumonia, atau IDO)."
-                ],
-                cols: [ { k: 'tglPasang', l: 'Tgl Pasang CVC', t: 'date'}, { k: 'tglLepas', l: 'Tgl Lepas CVC', t: 'date'}, { k: 'tglGejala', l: 'Tgl Gejala IADP', t: 'date'}, { k: 'kultur', l: 'Hemokultur', t: 'select', opts: ['Belum Ada', 'Positif (+)', 'Negatif (-)']}, { k: 'patogen', l: 'Patogen', t: 'text'} ]
-            },
-            VAP: {
-                def: "Pneumonia yang berkembang pada pasien yang menggunakan ventilator mekanik invasif selama ≥ 48 jam, dibuktikan dengan gambaran infiltrat baru/progresif pada rontgen thorax disertai kriteria klinis/laboratorium.",
-                kriteria: [
-                    "1. Pasien menggunakan ventilator mekanik invasif ≥ 48 jam pada saat onset atau 1 hari sebelumnya.",
-                    "2. Infiltrat baru atau progresif pada rontgen thorax yang tidak dapat dijelaskan penyebab lain.",
-                    "3. Dua dari: demam > 38°C atau hipotermia < 36°C; leukositosis > 12.000 atau leukopenia < 4.000; sekresi trakea purulen.",
-                    "4. Konfirmasi kultur (BAL, aspirat trakeal, atau kultur darah) lebih kuat sebagai bukti."
-                ],
-                cols: [ { k: 'tglIntubasi', l: 'Tgl Intubasi', t: 'date'}, { k: 'tglEkstubasi', l: 'Tgl Ekstubasi', t: 'date'}, { k: 'tglGejala', l: 'Tgl Gejala VAP', t: 'date'}, { k: 'rontgen', l: 'Rontgen Thorax', t: 'text'}, { k: 'patogen', l: 'Kultur Patogen', t: 'text'} ]
-            },
-            PLEBITIS: {
-                def: "Inflamasi vena perifer yang ditandai dengan nyeri, kemerahan, bengkak, dan/atau teraba indurasi sepanjang jalur vena, pada lokasi pemasangan IV line perifer, yang terjadi setelah pemasangan IV line.",
-                kriteria: [
-                    "1. Derajat 1: Kemerahan di lokasi insersi IV line, dengan atau tanpa nyeri lokal.",
-                    "2. Derajat 2: Nyeri di lokasi insersi, dengan kemerahan dan/atau bengkak.",
-                    "3. Derajat 3: Nyeri pada jalur vena, kemerahan, bengkak. Cord (pengerasan vena) teraba.",
-                    "4. Derajat 4: Nyeri sepanjang jalur vena, kemerahan, bengkak, cord teraba > 2.5 cm. Eksudat purulen.",
-                    "5. Derajat 5: Semua tanda di atas disertai demam, jaringan nekrotik."
-                ],
-                cols: [ { k: 'lokasi', l: 'Lokasi IV Line', t: 'text'}, { k: 'tglPasang', l: 'Tgl Pasang', t: 'date'}, { k: 'tglGejala', l: 'Tgl Muncul', t: 'date'}, { k: 'derajat', l: 'Derajat Plebitis', t: 'select', opts: ['1', '2', '3', '4', '5']}, { k: 'pemasang', l: 'Petugas Pemasang', t: 'text'} ]
-            }
-        };
-
-        function HAIsApp() {
-            const [currentUser, setCurrentUser] = useState(null);
-            const [activeTab, setActiveTab] = useState('dashboard');
+        function App() {
+            const [user, setUser] = useState(null);
+            const [activeTab, setActiveTab] = useState('audit');
             
-            const [users, setUsers, deleteUser] = useAppDatabase('users', DEFAULT_USERS);
-            const [masterUnits, setMasterUnits, deleteUnit] = useAppDatabase('units', DEFAULT_UNITS);
-            const [dbAudits, setDbAudits] = useAppDatabase('audits', []);
-            const [dbSurveilans, setDbSurveilans] = useAppDatabase('surveilans', []);
-            const [dbDenominators, setDbDenominators] = useAppDatabase('denominators', []);
+            // Database Simulasi
+            const [usersList, setUsersList] = useState(() => JSON.parse(localStorage.getItem('ppi_users')) || [
+                { id: 1, username: 'admin_ipcn', password: '123', role: 'IPCN', unit: 'Semua' },
+                { id: 2, username: 'perawat_icu', password: '123', role: 'IPCLN', unit: 'ICU' }
+            ]);
+            
+            useEffect(() => { localStorage.setItem('ppi_users', JSON.stringify(usersList)); }, [usersList]);
 
-            const handleLogout = () => {
-                setCurrentUser(null);
-                setActiveTab('dashboard');
+            // Form States
+            const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+            const [newUser, setNewUser] = useState({ username: '', password: '', role: 'IPCLN', unit: '' });
+            const [editingUserId, setEditingUserId] = useState(null);
+            const [activeSurvType, setActiveSurvType] = useState('IDO');
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                const foundUser = usersList.find(u => u.username === loginForm.username && u.password === loginForm.password);
+                if (foundUser) setUser(foundUser);
+                else alert('Username atau Password salah!');
             };
 
-            if (!currentUser) {
-                return <LoginScreen users={users} onLogin={setCurrentUser} isFirebase={isFirebaseConfigured} />;
-            }
+            // FUNGSI UPDATE/EDIT USER
+            const handleUserSubmit = (e) => {
+                e.preventDefault();
+                if (editingUserId) {
+                    setUsersList(usersList.map(u => u.id === editingUserId ? { ...newUser, id: editingUserId } : u));
+                    setEditingUserId(null);
+                    alert("Data user berhasil diupdate!");
+                } else {
+                    setUsersList([...usersList, { ...newUser, id: Date.now() }]);
+                    alert("User baru berhasil ditambahkan!");
+                }
+                setNewUser({ username: '', password: '', role: 'IPCLN', unit: '' });
+            };
 
-            const unitNames = masterUnits.map(u => u.name);
+            const handleEditUser = (u) => {
+                setEditingUserId(u.id);
+                setNewUser({ username: u.username, password: u.password, role: u.role, unit: u.unit });
+            };
 
-            const navItems = [
-                { id: 'dashboard', label: 'Dashboard Mutu', icon: 'fa-table-columns', roles: ['IPCLN', 'IPCN', 'MANAJEMEN'] },
-                { id: 'audit', label: 'Audit Bundle', icon: 'fa-clipboard-check', roles: ['IPCLN', 'IPCN'] },
-                { id: 'surveilans', label: 'Surveilans HAIs', icon: 'fa-chart-line', roles: ['IPCLN', 'IPCN'] },
-                { id: 'denominator', label: 'Denominator', icon: 'fa-database', roles: ['IPCLN', 'IPCN'] },
-                { id: 'verifikasi', label: 'Verifikasi Data', icon: 'fa-shield-halved', roles: ['IPCN'] },
-                { id: 'master', label: 'Data Master / User', icon: 'fa-gear', roles: ['IPCN'] },
-            ];
-
-            return (
-                <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
-                    <header className="bg-teal-700 text-white shadow-md sticky top-0 z-50">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div className="flex justify-between items-center h-16">
-                                <div className="flex items-center space-x-3">
-                                    <i className="fa-solid fa-hospital text-teal-200 text-3xl"></i>
-                                    <div>
-                                        <h1 className="text-xl font-bold leading-tight">Sistem PPI Terpadu</h1>
-                                        <p className="text-xs text-teal-200">
-                                            {isFirebaseConfigured ? '🟢 Tersambung Cloud (Firebase)' : '🟠 Mode Offline (Browser Storage)'}
-                                        </p>
-                                    </div>
+            if (!user) {
+                return (
+                    <div className="flex items-center justify-center min-h-screen bg-teal-700">
+                        <div className="bg-white p-8 rounded-lg shadow-xl w-96 fade-in">
+                            <h2 className="text-2xl font-bold mb-6 text-center text-teal-800">Login SIM-PPI</h2>
+                            <form onSubmit={handleLogin} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Username</label>
+                                    <input type="text" className="w-full border p-2 rounded" required value={loginForm.username} onChange={e => setLoginForm({...loginForm, username: e.target.value})} />
                                 </div>
-                                <div className="flex items-center space-x-4">
-                                    <div className="text-right hidden sm:block">
-                                        <p className="text-sm font-semibold">{currentUser.name}</p>
-                                        <p className="text-xs text-teal-200">{currentUser.role} {currentUser.unit !== 'ALL' && `- ${currentUser.unit}`}</p>
-                                    </div>
-                                    <button onClick={handleLogout} className="p-2 bg-teal-800 hover:bg-teal-900 rounded-lg transition" title="Logout">
-                                        <i className="fa-solid fa-right-from-bracket"></i>
-                                    </button>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Password</label>
+                                    <input type="password" className="w-full border p-2 rounded" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} />
                                 </div>
-                            </div>
-                        </div>
-                    </header>
-
-                    <div className="bg-white border-b border-slate-200 shadow-sm sticky top-16 z-40 overflow-x-auto">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 py-2">
-                            {navItems.filter(item => item.roles.includes(currentUser.role)).map(item => (
-                                <button key={item.id} onClick={() => setActiveTab(item.id)}
-                                    className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                                        activeTab === item.id ? 'bg-teal-50 text-teal-700 shadow-sm ring-1 ring-teal-600/20' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                                    }`}>
-                                    <i className={`fa-solid ${item.icon} mr-2 ${activeTab === item.id ? 'text-teal-600' : 'text-slate-400'}`}></i>
-                                    {item.label}
-                                    {item.id === 'verifikasi' && (dbAudits.filter(a => a.status === 'DRAFT').length + dbSurveilans.filter(s => s.status === 'DRAFT').length > 0) && (
-                                        <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
-                                            {dbAudits.filter(a => a.status === 'DRAFT').length + dbSurveilans.filter(s => s.status === 'DRAFT').length}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
+                                <button type="submit" className="w-full bg-teal-600 text-white font-bold p-2 rounded hover:bg-teal-700">Masuk</button>
+                            </form>
+                            <p className="mt-4 text-xs text-center text-gray-500">Gunakan <b>admin_ipcn</b> / pass: <b>123</b></p>
                         </div>
                     </div>
+                );
+            }
 
-                    <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                        {activeTab === 'dashboard' && <DashboardModule audits={dbAudits} surveilans={dbSurveilans} denominators={dbDenominators} units={unitNames} />}
-                        {activeTab === 'audit' && <AuditModule onSave={(data) => setDbAudits([...dbAudits, data])} user={currentUser} masterUnits={unitNames} />}
-                        {activeTab === 'surveilans' && <SurveilansModule onSave={(data) => setDbSurveilans([...dbSurveilans, data])} user={currentUser} masterUnits={unitNames} />}
-                        {activeTab === 'denominator' && <DenominatorModule denominators={dbDenominators} setDenominators={setDbDenominators} user={currentUser} masterUnits={unitNames} />}
-                        {activeTab === 'verifikasi' && <VerifikasiModule audits={dbAudits} surveilans={dbSurveilans} setAudits={setDbAudits} setSurveilans={setDbSurveilans} />}
-                        {activeTab === 'master' && <MasterDataModule units={masterUnits} setUnits={setMasterUnits} deleteUnit={deleteUnit} users={users} setUsers={setUsers} deleteUser={deleteUser} />}
+            return (
+                <div className="flex bg-gray-100 min-h-screen font-sans">
+                    {/* SIDEBAR */}
+                    <div className="w-64 bg-teal-800 text-white shadow-lg flex flex-col fixed h-full z-10">
+                        <div className="p-4 bg-teal-900"><h2 className="text-xl font-bold text-center">SIM-PPI</h2></div>
+                        <div className="p-4 bg-teal-700 mb-2 border-b border-teal-600">
+                            <p className="text-sm font-bold">{user.username}</p>
+                            <p className="text-xs text-teal-200">{user.role} - {user.unit}</p>
+                        </div>
+                        <nav className="flex-1 space-y-1 p-2">
+                            <button onClick={() => setActiveTab('audit')} className={`w-full text-left p-3 rounded text-sm font-medium ${activeTab === 'audit' ? 'bg-teal-600' : 'hover:bg-teal-600'}`}>📋 Audit Bundle HAIs</button>
+                            <button onClick={() => setActiveTab('surveilans')} className={`w-full text-left p-3 rounded text-sm font-medium ${activeTab === 'surveilans' ? 'bg-teal-600' : 'hover:bg-teal-600'}`}>🦠 Surveilans & Kasus</button>
+                            {user.role === 'IPCN' && (
+                                <button onClick={() => setActiveTab('master')} className={`w-full text-left p-3 rounded text-sm font-medium ${activeTab === 'master' ? 'bg-teal-600' : 'hover:bg-teal-600'}`}>⚙️ Manajemen User</button>
+                            )}
+                        </nav>
+                        <button onClick={() => setUser(null)} className="m-4 bg-red-600 hover:bg-red-700 p-2 rounded text-white font-bold text-sm text-center">Logout</button>
+                    </div>
+
+                    {/* KONTEN UTAMA */}
+                    <main className="flex-1 ml-64 p-8 overflow-y-auto">
+                        
+                        {/* TAB: AUDIT BUNDLE */}
+                        {activeTab === 'audit' && (
+                            <div className="fade-in">
+                                <h1 className="text-2xl font-bold text-teal-800 mb-2">Audit Kepatuhan Bundle HAIs</h1>
+                                <p className="text-sm text-gray-600 mb-6">Arahkan kursor ke kriteria (teks bergaris bawah) untuk melihat definisi operasional.</p>
+
+                                {/* CAUTI */}
+                                <div className="bg-white p-4 rounded shadow mb-6 border-l-4 border-blue-500 overflow-x-auto">
+                                    <h2 className="text-lg font-bold text-blue-800 mb-4">Bundle CAUTI (ISK)</h2>
+                                    <table className="w-full text-sm border-collapse min-w-[800px]">
+                                        <thead>
+                                            <tr className="bg-gray-100">
+                                                <th className="p-2 border text-left w-48">Nama Pasien</th>
+                                                <th className="p-2 border"><HeaderTooltip title="Indikasi Terdok." desc="Indikasi pemasangan kateter terdokumentasi di CPPT / rekam medis (bukan hanya kenyamanan pasien)" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Closed System" desc="Sistem drainase tertutup (closed system) terpasang dan tidak ada kebocoran" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Bag Di Bawah" desc="Posisi drainage bag: selalu di bawah pinggang pasien — tidak pernah di lantai atau lebih tinggi dari kandung kemih" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Selang Tdk Tekuk" desc="Selang kateter tidak tertekuk / terjepit / tersumbat" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Daily Reassess." desc="Re-assessment kebutuhan kateter dilakukan setiap hari — bila tidak diperlukan, kateter dicabut" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Perawatan Harian" desc="Perawatan kateter harian dilakukan (meatus uretra dibersihkan sesuai SPO)" /></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td className="p-2 border"><input type="text" className="w-full border p-1 rounded" placeholder="Nama Pasien..." /></td>
+                                                <td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* CLABSI */}
+                                <div className="bg-white p-4 rounded shadow mb-6 border-l-4 border-red-500 overflow-x-auto">
+                                    <h2 className="text-lg font-bold text-red-800 mb-4">Bundle CLABSI (IADP)</h2>
+                                    <table className="w-full text-sm border-collapse min-w-[800px]">
+                                        <thead>
+                                            <tr className="bg-gray-100">
+                                                <th className="p-2 border text-left w-48">Nama Pasien</th>
+                                                <th className="p-2 border"><HeaderTooltip title="Indikasi Terdok." desc="Indikasi pemasangan CVC / line sentral terdokumentasi dan dievaluasi setiap hari" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Max Sterile Barrier" desc="Maximal Sterile Barrier Precautions saat insersi: cap, masker, gaun steril, sarung tangan steril, draping steril seluruh tubuh" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Antisepsis Kulit" desc="Antisepsis kulit menggunakan chlorhexidine ≥ 0.5% dalam alkohol — dibiarkan kering sebelum insersi" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Dressing Utuh" desc="Dressing / verban insersi bersih, kering, dan utuh — diganti sesuai jadwal atau segera bila kotor/basah" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Scrub the Hub" desc="Port / hub line dibersihkan dengan alkohol 70% minimal 15 detik setiap kali sebelum akses (scrub the hub)" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Daily Reassess." desc="Kebutuhan CVC dievaluasi setiap hari — line dicabut segera bila tidak diperlukan" /></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td className="p-2 border"><input type="text" className="w-full border p-1 rounded" placeholder="Nama Pasien..." /></td>
+                                                <td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* VAP */}
+                                <div className="bg-white p-4 rounded shadow mb-6 border-l-4 border-green-500 overflow-x-auto">
+                                    <h2 className="text-lg font-bold text-green-800 mb-4">Bundle VAP</h2>
+                                    <table className="w-full text-sm border-collapse min-w-[800px]">
+                                        <thead>
+                                            <tr className="bg-gray-100">
+                                                <th className="p-2 border text-left w-48">Nama Pasien</th>
+                                                <th className="p-2 border"><HeaderTooltip title="HOB 30–45°" desc="Posisi kepala tempat tidur 30–45° (semi-recumbent) — kecuali ada kontraindikasi medis" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Oral Hygiene" desc="Oral hygiene dilakukan minimal setiap 4 jam menggunakan chlorhexidine 0.12% atau sesuai protokol" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Cuff Pressure" desc="Tekanan cuff (manset) ETT dipertahankan 20–30 cmH₂O — diperiksa dan dicatat setiap shift" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="SAT/SBT Dilakukan" desc="Sedation vacation (SAT) dan Spontaneous Breathing Trial (SBT) dilakukan dan didokumentasikan" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Water Trap OK" desc="Air dalam water trap / humidifier dikosongkan secara berkala agar tidak masuk ke jalan napas" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Daily Extubasi Eval." desc="Kebutuhan ventilator mekanik dievaluasi setiap hari untuk rencana extubasi sedini mungkin" /></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td className="p-2 border"><input type="text" className="w-full border p-1 rounded" placeholder="Nama Pasien..." /></td>
+                                                <td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* IDO */}
+                                <div className="bg-white p-4 rounded shadow mb-6 border-l-4 border-yellow-500 overflow-x-auto">
+                                    <h2 className="text-lg font-bold text-yellow-800 mb-4">Bundle IDO</h2>
+                                    <table className="w-full text-sm border-collapse min-w-[800px]">
+                                        <thead>
+                                            <tr className="bg-gray-100">
+                                                <th className="p-2 border text-left w-48">Nama Pasien</th>
+                                                <th className="p-2 border"><HeaderTooltip title="Profilaksis Tepat Waktu" desc="Profilaksis antibiotik diberikan dalam 60 menit sebelum insisi" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Jenis/Dosis Sesuai" desc="Jenis dan dosis antibiotik profilaksis sesuai panduan / formularium RS" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Ab Stop < 24 jam" desc="Antibiotik profilaksis dihentikan dalam 24 jam pasca operasi" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="Normotermia" desc="Suhu tubuh pasien terjaga (normotermia intraoperatif): target 36–37.5°C" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="GD Terkontrol" desc="Kadar glukosa darah intraoperatif dan 48 jam pasca operasi terkontrol (< 200 mg/dL)" /></th>
+                                                <th className="p-2 border"><HeaderTooltip title="SSC Lengkap" desc="Surgical Safety Checklist (Sign-In, Time-Out, Sign-Out) dilengkapi dengan benar" /></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td className="p-2 border"><input type="text" className="w-full border p-1 rounded" placeholder="Nama Pasien..." /></td>
+                                                <td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td><td className="p-2 border text-center"><input type="checkbox" /></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB: SURVEILANS */}
+                        {activeTab === 'surveilans' && (
+                            <div className="fade-in">
+                                <h1 className="text-2xl font-bold text-teal-800 mb-6">Pencatatan Surveilans HAIs</h1>
+                                
+                                <div className="flex flex-wrap gap-2 mb-6">
+                                    {['IDO', 'ISK (CAUTI)', 'IADP (CLABSI)', 'VAP', 'Plebitis'].map(type => (
+                                        <button key={type} onClick={() => setActiveSurvType(type)} className={`px-4 py-2 text-sm font-bold rounded ${activeSurvType === type ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}>
+                                            {type}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="bg-white p-6 rounded shadow border-t-4 border-teal-500 mb-6">
+                                    {activeSurvType === 'IDO' && (
+                                        <div className="mb-6 bg-blue-50 p-4 rounded border border-blue-100">
+                                            <h3 className="font-bold text-blue-900 mb-2">Definisi & Kriteria Surveilans IDO</h3>
+                                            <p className="text-sm text-gray-700 mb-2">Infeksi yang terjadi pada atau dekat lokasi insisi bedah dalam 30 hari pasca operasi (atau 90 hari untuk prosedur dengan implant).</p>
+                                            <ul className="text-sm text-gray-700 list-disc ml-5 space-y-1">
+                                                <li><b>Superfisial (S):</b> Infeksi kulit/subkutan di lokasi insisi dalam 30 hari. Tanda: nyeri/bengkak/kemerahan/panas + drainase purulen atau kultur positif.</li>
+                                                <li><b>Dalam/Deep (D):</b> Infeksi jaringan lunak dalam (fasia/otot) dalam 30 hari. Tanda: demam > 38°C + nyeri tekan + dehiscence/abses dalam.</li>
+                                                <li><b>Organ/Space (O):</b> Infeksi pada organ atau rongga tubuh yang dibuka saat operasi. Dibuktikan dengan kultur positif, abses, atau radiologi.</li>
+                                            </ul>
+                                        </div>
+                                    )}
+                                    
+                                    {activeSurvType === 'ISK (CAUTI)' && (
+                                        <div className="mb-6 bg-blue-50 p-4 rounded border border-blue-100">
+                                            <h3 className="font-bold text-blue-900 mb-2">Definisi & Kriteria Surveilans ISK (CAUTI)</h3>
+                                            <p className="text-sm text-gray-700 mb-2">Infeksi saluran kemih yang terjadi pada pasien yang menggunakan kateter urin lebih dari 2 hari kalender.</p>
+                                            <ul className="text-sm text-gray-700 list-disc ml-5 space-y-1">
+                                                <li>Pasien terpasang kateter urin > 2 hari kalender pada saat onset gejala atau 1 hari sebelumnya.</li>
+                                                <li>Setidaknya satu dari: demam > 38°C, urgensi berkemih, frekuensi, disuria, atau nyeri suprapubik.</li>
+                                                <li>Kultur urin positif dengan ≥ 10⁵ CFU/mL dari ≤ 2 jenis mikroorganisme.</li>
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {activeSurvType === 'IADP (CLABSI)' && (
+                                        <div className="mb-6 bg-blue-50 p-4 rounded border border-blue-100">
+                                            <h3 className="font-bold text-blue-900 mb-2">Definisi & Kriteria Surveilans IADP (CLABSI)</h3>
+                                            <p className="text-sm text-gray-700 mb-2">Infeksi aliran darah yang terjadi pada pasien yang menggunakan central venous catheter (CVC) lebih dari 2 hari kalender.</p>
+                                            <ul className="text-sm text-gray-700 list-disc ml-5 space-y-1">
+                                                <li>Pasien terpasang CVC/line sentral > 2 hari kalender pada saat onset gejala atau 1 hari sebelumnya.</li>
+                                                <li>Satu atau lebih hemokultur positif dari organisme yang bukan merupakan kontaminan umum.</li>
+                                                <li>Bukan infeksi yang bersumber dari tempat lain (seperti UTI, pneumonia, atau IDO).</li>
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {activeSurvType === 'VAP' && (
+                                        <div className="mb-6 bg-blue-50 p-4 rounded border border-blue-100">
+                                            <h3 className="font-bold text-blue-900 mb-2">Definisi & Kriteria Surveilans VAP</h3>
+                                            <p className="text-sm text-gray-700 mb-2">Pneumonia yang berkembang pada pasien yang menggunakan ventilator mekanik invasif selama ≥ 48 jam.</p>
+                                            <ul className="text-sm text-gray-700 list-disc ml-5 space-y-1">
+                                                <li>Pasien menggunakan ventilator mekanik invasif ≥ 48 jam pada saat onset atau 1 hari sebelumnya.</li>
+                                                <li>Infiltrat baru atau progresif pada rontgen thorax yang tidak dapat dijelaskan penyebab lain.</li>
+                                                <li>Dua dari: demam > 38°C atau hipotermia < 36°C; leukositosis > 12.000 atau leukopenia < 4.000; sekresi trakea purulen.</li>
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {activeSurvType === 'Plebitis' && (
+                                        <div className="mb-6 bg-blue-50 p-4 rounded border border-blue-100">
+                                            <h3 className="font-bold text-blue-900 mb-2">Definisi & Kriteria Surveilans Plebitis</h3>
+                                            <p className="text-sm text-gray-700 mb-2">Inflamasi vena perifer yang ditandai dengan nyeri, kemerahan, bengkak, dan/atau teraba indurasi sepanjang jalur vena.</p>
+                                            <ul className="text-sm text-gray-700 list-disc ml-5 space-y-1">
+                                                <li><b>Derajat 1:</b> Kemerahan di lokasi insersi IV line, dengan atau tanpa nyeri lokal.</li>
+                                                <li><b>Derajat 2:</b> Nyeri di lokasi insersi, dengan kemerahan dan/atau bengkak.</li>
+                                                <li><b>Derajat 3:</b> Nyeri pada jalur vena, kemerahan, bengkak. Cord (pengerasan vena) teraba.</li>
+                                                <li><b>Derajat 4:</b> Nyeri sepanjang jalur vena, kemerahan, bengkak, cord teraba > 2.5 cm. Eksudat purulen.</li>
+                                                <li><b>Derajat 5:</b> Semua tanda di atas disertai demam, jaringan nekrotik.</li>
+                                            </ul>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="grid grid-cols-4 gap-4 bg-gray-50 p-4 border rounded">
+                                        <input type="text" placeholder="Nama Pasien" className="border p-2 rounded text-sm" />
+                                        <input type="text" placeholder="No Rekam Medis" className="border p-2 rounded text-sm" />
+                                        <input type="date" className="border p-2 rounded text-sm" />
+                                        <button className="bg-teal-600 text-white font-bold rounded hover:bg-teal-700">Simpan Draft Laporan</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB: DATA MASTER & USER */}
+                        {activeTab === 'master' && user.role === 'IPCN' && (
+                            <div className="fade-in">
+                                <h1 className="text-2xl font-bold mb-6 text-teal-800">Manajemen Pengguna</h1>
+                                <div className="bg-white p-6 rounded shadow mb-6 border-t-4 border-teal-500">
+                                    <h3 className="font-bold mb-4">{editingUserId ? 'Ubah Data Pengguna (Edit)' : 'Tambah Pengguna Baru'}</h3>
+                                    <form onSubmit={handleUserSubmit} className="grid grid-cols-2 gap-4">
+                                        <input type="text" placeholder="Username" required className="border p-2 rounded" value={newUser.username} onChange={e => setNewUser({...newUser, username: e.target.value})} />
+                                        <input type="text" placeholder="Password" required className="border p-2 rounded" value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} />
+                                        <select className="border p-2 rounded" value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})}>
+                                            <option value="IPCLN">IPCLN (Ruangan)</option>
+                                            <option value="IPCN">IPCN (Komite)</option>
+                                            <option value="Manajemen">Manajemen (View Only)</option>
+                                        </select>
+                                        <input type="text" placeholder="Nama Unit (Misal: ICU)" className="border p-2 rounded" value={newUser.unit} onChange={e => setNewUser({...newUser, unit: e.target.value})} />
+                                        <div className="col-span-2 flex gap-2">
+                                            <button type="submit" className={`px-4 py-2 rounded text-white font-bold shadow ${editingUserId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-teal-600 hover:bg-teal-700'}`}>
+                                                {editingUserId ? 'Update Data Pengguna' : 'Tambah Pengguna'}
+                                            </button>
+                                            {editingUserId && (
+                                                <button type="button" onClick={() => { setEditingUserId(null); setNewUser({ username: '', password: '', role: 'IPCLN', unit: '' }); }} className="bg-gray-400 text-white px-4 py-2 rounded font-bold shadow hover:bg-gray-500">Batal Edit</button>
+                                            )}
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <div className="bg-white rounded shadow overflow-hidden">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-gray-100">
+                                            <tr>
+                                                <th className="p-3 border-b text-left">Username</th>
+                                                <th className="p-3 border-b text-left">Role</th>
+                                                <th className="p-3 border-b text-left">Unit</th>
+                                                <th className="p-3 border-b text-center">Aksi (Edit / Hapus)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {usersList.map((u) => (
+                                                <tr key={u.id} className="hover:bg-gray-50">
+                                                    <td className="p-3 border-b font-medium">{u.username}</td>
+                                                    <td className="p-3 border-b"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">{u.role}</span></td>
+                                                    <td className="p-3 border-b">{u.unit}</td>
+                                                    <td className="p-3 border-b text-center">
+                                                        <button onClick={() => handleEditUser(u)} className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs font-bold mr-2 shadow">Edit</button>
+                                                        <button onClick={() => setUsersList(usersList.filter(user => user.id !== u.id))} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-bold shadow">Hapus</button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+                        
                     </main>
                 </div>
             );
         }
 
-        function LoginScreen({ users, onLogin, isFirebase }) {
-            const [selectedUser, setSelectedUser] = useState(null);
-            const [password, setPassword] = useState('');
-            const [error, setError] = useState('');
-
-            const handleLogin = (e) => {
-                e.preventDefault();
-                if (selectedUser.password === password) {
-                    onLogin(selectedUser);
-                } else {
-                    setError('Password salah!');
-                }
-            };
-
-            return (
-                <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-                    <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-                        <div className="bg-teal-700 p-6 text-center">
-                            <i className="fa-solid fa-hospital text-teal-200 text-5xl mb-3"></i>
-                            <h1 className="text-2xl font-bold text-white">Sistem PPI HAIs</h1>
-                            <p className="text-teal-200 text-xs mt-2">
-                                {isFirebase ? '🌐 Multi-User Mode (Firebase Active)' : '💾 Standalone Mode (Browser LocalStorage)'}
-                            </p>
-                        </div>
-                        <div className="p-6">
-                            {!selectedUser ? (
-                                <div className="space-y-3">
-                                    <p className="text-sm text-slate-600 text-center mb-4 font-medium">Pilih Profil Pengguna</p>
-                                    {users.map(user => (
-                                        <button key={user.id} onClick={() => { setSelectedUser(user); setError(''); setPassword(''); }}
-                                            className="w-full flex items-center justify-between p-3 border border-slate-200 rounded-xl hover:border-teal-500 hover:bg-teal-50 transition-all group">
-                                            <div className="flex items-center">
-                                                <div className="bg-slate-100 p-2 rounded-lg group-hover:bg-teal-200 mr-3 transition-colors">
-                                                    <i className="fa-solid fa-user text-slate-500 group-hover:text-teal-700"></i>
-                                                </div>
-                                                <div className="text-left">
-                                                    <p className="font-bold text-slate-800 text-sm">{user.name}</p>
-                                                    <p className="text-[10px] font-medium text-slate-500">Role: {user.role} | Unit: {user.unit}</p>
-                                                </div>
-                                            </div>
-                                            <i className="fa-solid fa-lock text-slate-300 group-hover:text-teal-600"></i>
-                                        </button>
-                                    ))}
-                                </div>
-                            ) : (
-                                <form onSubmit={handleLogin} className="space-y-4">
-                                    <div className="flex items-center justify-between mb-4 border-b pb-4">
-                                        <div>
-                                            <p className="text-sm font-bold text-slate-800">{selectedUser.name}</p>
-                                            <p className="text-xs text-slate-500">{selectedUser.role} - {selectedUser.unit}</p>
-                                        </div>
-                                        <button type="button" onClick={() => setSelectedUser(null)} className="text-xs text-teal-600 hover:underline">Ganti User</button>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-700 uppercase mb-2 flex items-center">
-                                            <i className="fa-solid fa-key mr-2"></i> Password
-                                        </label>
-                                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus
-                                            className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none" 
-                                            placeholder="Masukkan password..." />
-                                        {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
-                                        <p className="text-[10px] text-slate-400 mt-2">*Default pass untuk prototype: 123</p>
-                                    </div>
-                                    <button type="submit" className="w-full bg-teal-600 text-white font-bold py-3 rounded-lg hover:bg-teal-700 transition">
-                                        Masuk Sistem
-                                    </button>
-                                </form>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        function MasterDataModule({ units, setUnits, deleteUnit, users, setUsers, deleteUser }) {
-            const [activeTab, setActiveTab] = useState('users');
-            const [uName, setUName] = useState('');
-            const [uRole, setURole] = useState('IPCLN');
-            const [uUnit, setUUnit] = useState('');
-            const [uPass, setUPass] = useState('');
-            const [newUnit, setNewUnit] = useState('');
-
-            const handleAddUser = (e) => {
-                e.preventDefault();
-                if(uName && uPass) {
-                    setUsers([...users, { id: Date.now(), name: uName, role: uRole, unit: uRole === 'IPCLN' ? uUnit : 'ALL', password: uPass }]);
-                    setUName(''); setUPass('');
-                }
-            };
-
-            const handleAddUnit = (e) => {
-                e.preventDefault();
-                if (newUnit.trim()) {
-                    setUnits([...units, { id: Date.now(), name: newUnit.trim() }]);
-                    setNewUnit('');
-                }
-            };
-
-            return (
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
-                        <i className="fa-solid fa-gear text-teal-600 mr-2"></i> Manajemen Master Data & Hak Akses
-                    </h2>
-                    <div className="border-b border-slate-200 mb-6">
-                        <div className="flex space-x-6">
-                            <button onClick={() => setActiveTab('users')} className={`pb-3 font-medium text-sm transition ${activeTab==='users' ? 'border-b-2 border-teal-500 text-teal-600' : 'text-slate-500'}`}>Manajemen User</button>
-                            <button onClick={() => setActiveTab('units')} className={`pb-3 font-medium text-sm transition ${activeTab==='units' ? 'border-b-2 border-teal-500 text-teal-600' : 'text-slate-500'}`}>Manajemen Unit / Ruangan</button>
-                        </div>
-                    </div>
-                    {activeTab === 'users' && (
-                        <div className="grid md:grid-cols-3 gap-8">
-                            <div className="md:col-span-1 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                <h3 className="text-sm font-bold text-slate-700 mb-4">Tambah Pengguna Baru</h3>
-                                <form onSubmit={handleAddUser} className="space-y-3">
-                                    <div><label className="text-xs font-semibold">Nama Lengkap</label><input type="text" required value={uName} onChange={e=>setUName(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none focus:border-teal-500" /></div>
-                                    <div><label className="text-xs font-semibold">Role Akses</label>
-                                        <select value={uRole} onChange={e=>setURole(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none bg-white">
-                                            <option value="IPCLN">IPCLN (Perawat Ruangan)</option><option value="IPCN">IPCN (Komite PPI)</option><option value="MANAJEMEN">MANAJEMEN (Direksi)</option>
-                                        </select>
-                                    </div>
-                                    {uRole === 'IPCLN' && <div><label className="text-xs font-semibold">Penempatan Unit</label>
-                                        <select value={uUnit} required onChange={e=>setUUnit(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none bg-white">
-                                            <option value="">Pilih Unit...</option>
-                                            {units.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
-                                        </select>
-                                    </div>}
-                                    <div><label className="text-xs font-semibold">Password Default</label><input type="text" required value={uPass} onChange={e=>setUPass(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none focus:border-teal-500" /></div>
-                                    <button type="submit" className="w-full bg-teal-600 text-white font-bold py-2 rounded text-sm mt-2 hover:bg-teal-700"><i className="fa-solid fa-plus mr-1"></i> Tambah User</button>
-                                </form>
-                            </div>
-                            <div className="md:col-span-2 overflow-x-auto">
-                                <table className="w-full text-sm text-left border-collapse border border-slate-200 rounded-lg">
-                                    <thead className="bg-slate-50 text-slate-600 border-b"><tr><th className="p-3">Nama</th><th className="p-3">Role</th><th className="p-3">Unit</th><th className="p-3">Password</th><th className="p-3 text-center">Aksi</th></tr></thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {users.map(u => (
-                                            <tr key={u.id} className="hover:bg-slate-50">
-                                                <td className="p-3 font-medium">{u.name}</td><td className="p-3"><span className="bg-slate-200 px-2 py-1 rounded text-xs">{u.role}</span></td>
-                                                <td className="p-3">{u.unit}</td><td className="p-3 text-slate-400">••••{u.password.slice(-2)}</td>
-                                                <td className="p-3 text-center"><button onClick={() => deleteUser(u.id, users.filter(x=>x.id!==u.id))} className="text-red-500 hover:bg-red-50 p-1 rounded"><i className="fa-solid fa-trash"></i></button></td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-                    {activeTab === 'units' && (
-                        <div className="max-w-md">
-                            <form onSubmit={handleAddUnit} className="flex space-x-2 mb-6">
-                                <input type="text" required value={newUnit} onChange={e=>setNewUnit(e.target.value)} placeholder="Nama Unit (Mis: IGD, NICU)..." className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-teal-500" />
-                                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">Tambah</button>
-                            </form>
-                            <ul className="border border-slate-200 rounded-lg divide-y divide-slate-200">
-                                {units.map(u => (
-                                    <li key={u.id} className="flex justify-between items-center p-3 text-sm hover:bg-slate-50">
-                                        <span className="font-medium text-slate-700">{u.name}</span>
-                                        <button onClick={() => deleteUnit(u.id, units.filter(x=>x.id!==u.id))} className="text-red-500 hover:bg-red-50 p-1 rounded"><i className="fa-solid fa-trash"></i></button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        function DenominatorModule({ denominators, setDenominators, user, masterUnits }) {
-            const [form, setForm] = useState({ bulan: new Date().toISOString().slice(0,7), unit: user.unit !== 'ALL' ? user.unit : '', hariRawat: '', hariKateter: '', hariCVC: '', hariVentilator: '', hariIVLine: '', jumlahOperasi: '' });
-            const [msg, setMsg] = useState({ text: '', type: '' });
-            const availableUnits = user.unit === 'ALL' ? masterUnits : [user.unit];
-
-            const handleSave = () => {
-                if (!form.bulan || !form.unit) { 
-                    setMsg({text: 'Bulan dan Unit Wajib diisi!', type: 'error'}); 
-                    setTimeout(() => setMsg({text: '', type: ''}), 3000);
-                    return; 
-                }
-                const payload = {
-                    ...form, id: Date.now(),
-                    hariRawat: Number(form.hariRawat)||0, hariKateter: Number(form.hariKateter)||0, 
-                    hariCVC: Number(form.hariCVC)||0, hariVentilator: Number(form.hariVentilator)||0, 
-                    hariIVLine: Number(form.hariIVLine)||0, jumlahOperasi: Number(form.jumlahOperasi)||0
-                };
-                
-                const filtered = denominators.filter(d => !(d.bulan === form.bulan && d.unit === form.unit));
-                setDenominators([...filtered, payload]);
-                
-                setMsg({text: 'Data Denominator Berhasil Disimpan!', type: 'success'});
-                setTimeout(() => setMsg({text: '', type: ''}), 3000);
-            };
-
-            return (
-                <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h2 className="text-lg font-bold text-slate-800 mb-2 flex items-center">
-                            <i className="fa-solid fa-database text-teal-600 mr-2"></i> Form Input Denominator 
-                        </h2>
-                        <p className="text-sm text-slate-500 mb-6">Wajib diisi setiap akhir bulan oleh IPCLN sebagai pembagi (denominator) dalam perhitungan Incidence Rate (‰).</p>
-                        
-                        {msg.text && (
-                            <div className={`mb-4 p-3 rounded-lg text-sm font-bold border ${msg.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-teal-50 text-teal-700 border-teal-200'}`}>
-                                {msg.text}
-                            </div>
-                        )}
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-5 rounded-lg border border-slate-100 mb-6">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Periode (Bulan/Tahun)</label>
-                                <input type="month" value={form.bulan} onChange={e => setForm({...form, bulan: e.target.value})} className="w-full border border-slate-300 rounded-md p-2 text-sm outline-none focus:ring-2 focus:ring-teal-500" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Unit Ruangan</label>
-                                <select value={form.unit} onChange={e => setForm({...form, unit: e.target.value})} disabled={user.unit !== 'ALL'} className="w-full border border-slate-300 rounded-md p-2 text-sm bg-white disabled:bg-slate-100 outline-none">
-                                    <option value="">Pilih Unit...</option>
-                                    {availableUnits.map(u => <option key={u} value={u}>{u}</option>)}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                            {[
-                                {k:'hariRawat', l:'Total Hari Rawat', c:'bg-slate-100'}, {k:'hariKateter', l:'Total Hari Kateter (ISK)', c:'bg-blue-50'},
-                                {k:'hariCVC', l:'Total Hari CVC (IADP)', c:'bg-indigo-50'}, {k:'hariVentilator', l:'Total Hari Ventilator (VAP)', c:'bg-purple-50'},
-                                {k:'hariIVLine', l:'Total Hari IV Line (Plebitis)', c:'bg-orange-50'}, {k:'jumlahOperasi', l:'Total Tindakan Op (IDO)', c:'bg-yellow-50'}
-                            ].map(item => (
-                                <div key={item.k} className={`p-4 rounded-lg border border-slate-200 ${item.c}`}>
-                                    <label className="block text-xs font-semibold text-slate-700 mb-2">{item.l}</label>
-                                    <input type="number" min="0" value={form[item.k]} onChange={e => setForm({...form, [item.k]: e.target.value})} className="w-full border border-slate-300 rounded-md p-2 text-lg font-bold text-center outline-none focus:ring-2 focus:ring-teal-500" placeholder="0" />
-                                </div>
-                            ))}
-                        </div>
-                        <div className="flex justify-end">
-                            <button onClick={handleSave} className="flex items-center px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 shadow-md font-bold transition">
-                                <i className="fa-solid fa-floppy-disk mr-2"></i> Simpan Denominator
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        function SurveilansModule({ onSave, user, masterUnits }) {
-            const [activeType, setActiveType] = useState('ISK');
-            const [saveStatus, setSaveStatus] = useState({ status: false, msg: ''});
-            const SURV_TYPES = Object.keys(SURVEILANS_CONFIG);
-
-            const [metadata, setMetadata] = useState({
-                bulan: new Date().toISOString().slice(0,7),
-                unit: user.unit !== 'ALL' ? user.unit : '',
-                ipcln: user.name, tglPengisian: new Date().toISOString().split('T')[0]
-            });
-
-            const [survData, setSurvData] = useState({ IDO: [], ISK: [], IADP: [], VAP: [], PLEBITIS: [] });
-            const handleDataChange = (type, newRows) => setSurvData(prev => ({ ...prev, [type]: newRows }));
-
-            const availableUnits = user.unit === 'ALL' ? masterUnits : [user.unit];
-
-            const handleSave = () => {
-                if (!metadata.bulan || !metadata.unit) {
-                    setSaveStatus({status: 'error', msg: 'Harap isi Periode (Bulan) dan Unit Ruangan!'});
-                    setTimeout(() => setSaveStatus({status:false}), 3000);
-                    return;
-                }
-                const payload = {
-                    id: Date.now(), status: user.role === 'IPCLN' ? 'DRAFT' : 'VERIFIED',
-                    metadata, data: survData
-                };
-                onSave(payload);
-                setSurvData({ IDO: [], ISK: [], IADP: [], VAP: [], PLEBITIS: [] });
-                setSaveStatus({status: 'success', msg: user.role === 'IPCLN' ? 'Draft Berhasil Dikirim ke IPCN!' : 'Data Surveilans Tersimpan!'});
-                setTimeout(() => setSaveStatus({status:false}), 3000);
-            };
-
-            return (
-                <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-bold text-slate-800 flex items-center">
-                                <i className="fa-solid fa-chart-line text-teal-600 mr-2"></i> Pencatatan Surveilans Kasus HAIs
-                            </h2>
-                            {saveStatus.status === 'success' && <span className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full font-medium border border-green-200">{saveStatus.msg}</span>}
-                            {saveStatus.status === 'error' && <span className="text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full font-medium border border-red-200">{saveStatus.msg}</span>}
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Periode (Bulan)</label><input type="month" className="mt-1 w-full border border-slate-300 rounded p-2 text-sm outline-none bg-white" value={metadata.bulan} onChange={(e) => setMetadata({...metadata, bulan: e.target.value})} /></div>
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Unit / Ruangan</label><select className="mt-1 w-full border border-slate-300 rounded p-2 text-sm outline-none bg-white" value={metadata.unit} onChange={(e) => setMetadata({...metadata, unit: e.target.value})} disabled={user.unit !== 'ALL'}><option value="">Pilih Unit...</option>{availableUnits.map(u => <option key={u} value={u}>{u}</option>)}</select></div>
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Petugas (IPCLN)</label><input type="text" className="mt-1 w-full bg-slate-100 border border-slate-300 rounded p-2 text-sm outline-none" value={metadata.ipcln} disabled /></div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-4">
-                            {SURV_TYPES.map((type) => (
-                                <button key={type} onClick={() => setActiveType(type)}
-                                    className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center ${activeType === type ? 'bg-teal-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
-                                    {type}
-                                    {survData[type].length > 0 && <span className={`ml-2 py-0.5 px-2 rounded-full text-[10px] ${activeType === type ? 'bg-teal-800 text-white' : 'bg-slate-300 text-slate-700'}`}>{survData[type].length}</span>}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="mb-6">
-                            <div className="bg-blue-50 text-blue-900 p-4 rounded-md text-sm border border-blue-200 mb-4 flex items-start">
-                                <i className="fa-solid fa-circle-info mr-3 mt-1 text-blue-600 shrink-0 text-lg"></i>
-                                <div>
-                                    <p className="font-bold mb-1">Definisi {activeType}:</p>
-                                    <p className="mb-3 leading-relaxed text-xs">{SURVEILANS_CONFIG[activeType].def}</p>
-                                    <p className="font-bold mb-1">Kriteria Surveilans:</p>
-                                    <ul className="list-none space-y-1">
-                                        {SURVEILANS_CONFIG[activeType].kriteria.map((krit, idx) => (
-                                            <li key={idx} className="text-xs leading-relaxed text-blue-800">{krit}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                            <SurveilansSpecificTable config={SURVEILANS_CONFIG[activeType].cols} rows={survData[activeType]} setRows={(r) => handleDataChange(activeType, r)} />
-                        </div>
-
-                        <div className="mt-8 pt-4 border-t border-slate-200 flex justify-end items-center">
-                            <button onClick={handleSave} className={`flex items-center px-8 py-3 text-white rounded-lg shadow-md font-bold transition ${user.role==='IPCLN' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-teal-600 hover:bg-teal-700'}`}>
-                                <i className="fa-solid fa-floppy-disk mr-2"></i> {user.role === 'IPCLN' ? 'Kirim ke IPCN (Draft)' : 'Simpan Data Surveilans'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        function SurveilansSpecificTable({ config, rows, setRows }) {
-            const addRow = () => {
-                let emptyRow = { id: Date.now(), pasien: '', nrm: '' };
-                config.forEach(c => emptyRow[c.k] = '');
-                setRows([...rows, emptyRow]);
-            };
-            const removeRow = (id) => setRows(rows.filter(r => r.id !== id));
-            const updateVal = (id, key, val) => setRows(rows.map(r => r.id === id ? {...r, [key]: val} : r));
-
-            return (
-                <div className="space-y-3">
-                    <div className="overflow-x-auto rounded-lg border border-slate-200">
-                        <table className="min-w-full divide-y divide-slate-200 text-sm whitespace-nowrap">
-                            <thead className="bg-slate-50">
-                                <tr>
-                                    <th className="px-3 py-3 text-left font-semibold text-slate-700">Pasien & NRM</th>
-                                    {config.map(c => <th key={c.k} className="px-3 py-3 text-left font-semibold text-slate-700">{c.l}</th>)}
-                                    <th className="px-2 py-3 w-10"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-slate-200">
-                                {rows.length === 0 && (<tr><td colSpan={config.length + 2} className="px-4 py-8 text-center text-slate-400 italic">Belum ada input kasus. Klik "Tambah Data Pasien" untuk mulai pendataan.</td></tr>)}
-                                {rows.map((row) => (
-                                    <tr key={row.id} className="hover:bg-slate-50">
-                                        <td className="px-3 py-2 align-top">
-                                            <input type="text" placeholder="Nama Pasien" value={row.pasien} onChange={e=>updateVal(row.id,'pasien',e.target.value)} className="w-40 mb-1 p-1.5 border border-slate-300 rounded block text-xs outline-none focus:border-teal-500 bg-white" />
-                                            <input type="text" placeholder="No RM" value={row.nrm} onChange={e=>updateVal(row.id,'nrm',e.target.value)} className="w-40 p-1.5 border border-slate-300 rounded block text-xs bg-slate-50 outline-none focus:border-teal-500" />
-                                        </td>
-                                        {config.map(c => (
-                                            <td key={c.k} className="px-3 py-2 align-top">
-                                                {c.t === 'select' ? (
-                                                    <select value={row[c.k]} onChange={e=>updateVal(row.id, c.k, e.target.value)} className="p-1.5 border border-slate-300 rounded text-xs outline-none focus:border-teal-500 bg-white min-w-[120px]">
-                                                        <option value="">- Pilih -</option>
-                                                        {c.opts.map(o => <option key={o} value={o}>{o}</option>)}
-                                                    </select>
-                                                ) : (
-                                                    <input type={c.t} value={row[c.k]} onChange={e=>updateVal(row.id, c.k, e.target.value)} placeholder="..." className="w-full p-1.5 border border-slate-300 rounded text-xs outline-none focus:border-teal-500 bg-white" />
-                                                )}
-                                            </td>
-                                        ))}
-                                        <td className="px-2 py-2 align-middle text-center"><button onClick={() => removeRow(row.id)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded transition"><i className="fa-solid fa-trash"></i></button></td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    <button onClick={addRow} className="text-sm font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-2 rounded-lg flex items-center transition border border-teal-200"><i className="fa-solid fa-plus mr-2"></i> Tambah Data Pasien</button>
-                </div>
-            );
-        }
-
-        const calculateCompliance = (answers) => {
-            const keys = Object.keys(answers).filter(k => answers[k] === 'Y' || answers[k] === 'T');
-            if (keys.length === 0) return 0;
-            return Math.round((keys.filter(k => answers[k] === 'Y').length / keys.length) * 100);
-        };
-
-        function AuditModule({ onSave, user, masterUnits }) {
-            const [activeBundle, setActiveBundle] = useState('CAUTI');
-            const [bundleRows, setBundleRows] = useState({ CAUTI: [], CLABSI: [], VAP: [], IDO: [] });
-            const [metadata, setMetadata] = useState({ tanggal: new Date().toISOString().split('T')[0], unit: user.unit !== 'ALL' ? user.unit : '', auditor: user.name });
-            const [statusMsg, setStatusMsg] = useState(null);
-
-            const handleSave = () => {
-                if (!metadata.unit) {
-                    setStatusMsg({ type: 'error', text: 'Pilih Unit Terlebih Dahulu!' });
-                    setTimeout(() => setStatusMsg(null), 3000);
-                    return;
-                }
-                onSave({ id: Date.now(), status: user.role === 'IPCLN' ? 'DRAFT' : 'VERIFIED', metadata, data: bundleRows });
-                setBundleRows({ CAUTI: [], CLABSI: [], VAP: [], IDO: [] });
-                setStatusMsg({ type: 'success', text: user.role === 'IPCLN' ? 'Audit Dikirim sebagai Draft!' : 'Data Audit Berhasil Disimpan!' });
-                setTimeout(() => setStatusMsg(null), 3000);
-            };
-
-            return (
-                <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-bold text-slate-800 flex items-center"><i className="fa-solid fa-file-lines text-teal-600 mr-2"></i> Formulir Audit Kepatuhan Bundle</h2>
-                            {statusMsg && <span className={`text-sm px-3 py-1 rounded-full font-medium border ${statusMsg.type === 'success' ? 'text-green-600 bg-green-50 border-green-200' : 'text-red-600 bg-red-50 border-red-200'}`}>{statusMsg.text}</span>}
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Tgl Audit</label><input type="date" className="mt-1 w-full border border-slate-300 rounded p-2 text-sm outline-none bg-white" value={metadata.tanggal} onChange={(e) => setMetadata({...metadata, tanggal: e.target.value})} /></div>
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Unit</label><select className="mt-1 w-full border border-slate-300 rounded p-2 text-sm bg-white outline-none" value={metadata.unit} onChange={(e) => setMetadata({...metadata, unit: e.target.value})} disabled={user.unit!=='ALL'}><option value="">Pilih...</option>{(user.unit==='ALL'?masterUnits:[user.unit]).map(u => <option key={u} value={u}>{u}</option>)}</select></div>
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Auditor</label><input type="text" className="mt-1 w-full bg-slate-100 border border-slate-300 rounded p-2 text-sm" value={metadata.auditor} disabled /></div>
-                        </div>
-                        <div className="border-b border-slate-200 mb-4 flex space-x-2">
-                            {Object.keys(AUDIT_BUNDLES).map(k => (
-                                <button key={k} onClick={()=>setActiveBundle(k)} className={`pb-3 px-4 font-bold text-sm border-b-2 ${activeBundle===k ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>{k} {bundleRows[k].length>0 && `(${bundleRows[k].length})`}</button>
-                            ))}
-                        </div>
-                        <AuditTable config={AUDIT_BUNDLES[activeBundle]} rows={bundleRows[activeBundle]} setRows={(r) => setBundleRows({...bundleRows, [activeBundle]: r})} />
-                        <div className="mt-6 flex justify-end"><button onClick={handleSave} className={`flex items-center px-6 py-2 text-white rounded font-bold transition ${user.role === 'IPCLN' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-teal-600 hover:bg-teal-700'}`}><i className="fa-solid fa-floppy-disk mr-2"></i> {user.role === 'IPCLN' ? 'Kirim ke IPCN (Draft)' : 'Simpan Audit'}</button></div>
-                    </div>
-                </div>
-            );
-        }
-
-        function AuditTable({ config, rows, setRows }) {
-            const addRow = () => {
-                let r = { id: Date.now(), name: '', nrm: '', answers: {} };
-                config.columns.forEach(c => r.answers[c.key] = null);
-                setRows([...rows, r]);
-            };
-            const setAns = (id, k, v) => setRows(rows.map(r => r.id===id ? {...r, answers: {...r.answers, [k]: v}} : r));
-
-            return (
-                <div>
-                    <div className="overflow-x-auto border border-slate-200 rounded-lg">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-50"><tr><th className="p-3 w-48">Pasien</th>{config.columns.map(c=><th key={c.key} className="p-2 text-center text-xs font-bold">{c.label}</th>)}<th className="p-2 text-center">%</th><th></th></tr></thead>
-                            <tbody className="divide-y divide-slate-200">
-                                {rows.length === 0 && (<tr><td colSpan={config.columns.length + 3} className="px-4 py-8 text-center text-slate-400 italic">Klik tombol "Tambah Pasien" untuk mulai observasi bundle.</td></tr>)}
-                                {rows.map((r,i) => (
-                                    <tr key={r.id}>
-                                        <td className="p-2"><input placeholder="Nama Pasien" value={r.name} onChange={e=>{let nr=[...rows];nr[i].name=e.target.value;setRows(nr)}} className="w-full text-xs border rounded p-1 mb-1 outline-none focus:border-teal-500"/><input placeholder="No. RM" value={r.nrm} onChange={e=>{let nr=[...rows];nr[i].nrm=e.target.value;setRows(nr)}} className="w-full text-xs border rounded p-1 bg-slate-50 outline-none focus:border-teal-500"/></td>
-                                        {config.columns.map(c => (
-                                            <td key={c.key} className="p-1 align-middle text-center">
-                                                <div className="flex justify-center space-x-1">
-                                                    <button onClick={()=>setAns(r.id,c.key,'Y')} className={`px-2 py-1 border rounded text-xs font-bold ${r.answers[c.key]==='Y'?'bg-green-500 text-white border-green-600':'bg-white text-slate-400'}`}>Y</button>
-                                                    <button onClick={()=>setAns(r.id,c.key,'T')} className={`px-2 py-1 border rounded text-xs font-bold ${r.answers[c.key]==='T'?'bg-red-500 text-white border-red-600':'bg-white text-slate-400'}`}>T</button>
-                                                    <button onClick={()=>setAns(r.id,c.key,'NA')} className={`text-[10px] px-1 ${r.answers[c.key]==='NA'?'font-bold text-slate-800 underline':'text-slate-400'}`}>N/A</button>
-                                                </div>
-                                            </td>
-                                        ))}
-                                        <td className="p-2 text-center font-bold text-slate-700 bg-slate-50">{calculateCompliance(r.answers)}%</td>
-                                        <td className="p-2 text-center"><button onClick={()=>setRows(rows.filter(x=>x.id!==r.id))} className="text-red-400"><i className="fa-solid fa-trash"></i></button></td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    <button onClick={addRow} className="mt-3 text-sm font-bold text-teal-700 bg-teal-50 px-3 py-2 rounded-lg flex items-center border border-teal-200 hover:bg-teal-100"><i className="fa-solid fa-plus mr-2"></i>Tambah Pasien</button>
-                </div>
-            );
-        }
-
-        function VerifikasiModule({ audits, surveilans, setAudits, setSurveilans }) {
-            const verify = (id, type) => {
-                if(type==='A') setAudits(audits.map(a => a.id === id ? {...a, status: 'VERIFIED'} : a));
-                if(type==='S') setSurveilans(surveilans.map(s => s.id === id ? {...s, status: 'VERIFIED'} : s));
-            };
-            const dAud = audits.filter(a => a.status === 'DRAFT');
-            const dSurv = surveilans.filter(s => s.status === 'DRAFT');
-
-            return (
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <h2 className="text-lg font-bold flex items-center mb-6"><i className="fa-solid fa-shield-halved text-teal-600 mr-2"></i> Verifikasi Data Draft dari IPCLN</h2>
-                    {dAud.length===0 && dSurv.length===0 ? (
-                        <div className="text-center p-8 text-slate-500">
-                            <i className="fa-solid fa-circle-check text-5xl text-emerald-400 mb-4 block"></i>
-                            <p className="font-bold text-lg">Semua data sudah terverifikasi.</p>
-                            <p className="text-sm">Tidak ada dokumen draft yang menunggu antrean verifikasi.</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {dSurv.map(s => (
-                                <div key={s.id} className="border-l-4 border-rose-500 bg-rose-50 p-4 rounded flex justify-between items-center shadow-sm">
-                                    <div>
-                                        <p className="font-bold text-sm text-slate-800">[SURVEILANS HAIs] Periode: <span className="text-rose-600">{s.metadata.bulan}</span> | Unit: {s.metadata.unit}</p>
-                                        <p className="text-xs text-slate-600 mt-1">Dilaporkan Oleh: {s.metadata.ipcln} pada {s.metadata.tglPengisian}</p>
-                                    </div>
-                                    <button onClick={()=>verify(s.id,'S')} className="bg-emerald-600 hover:bg-emerald-700 transition text-white text-xs font-bold px-4 py-2 rounded shadow-sm"><i className="fa-solid fa-check mr-1"></i> Verifikasi Data</button>
-                                </div>
-                            ))}
-                            {dAud.map(a => (
-                                <div key={a.id} className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded flex justify-between items-center shadow-sm">
-                                    <div>
-                                        <p className="font-bold text-sm text-slate-800">[AUDIT BUNDLE] Tanggal Audit: <span className="text-blue-600">{a.metadata.tanggal}</span> | Unit: {a.metadata.unit}</p>
-                                        <p className="text-xs text-slate-600 mt-1">Dilaporkan Oleh: {a.metadata.auditor}</p>
-                                    </div>
-                                    <button onClick={()=>verify(a.id,'A')} className="bg-emerald-600 hover:bg-emerald-700 transition text-white text-xs font-bold px-4 py-2 rounded shadow-sm"><i className="fa-solid fa-check mr-1"></i> Verifikasi Data</button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        function DashboardModule({ audits, surveilans, denominators, units }) {
-            const [filterMonth, setFilterMonth] = useState(new Date().toISOString().slice(0,7)); 
-            const [filterUnit, setFilterUnit] = useState('ALL');
-
-            const { rateData, compData, kpi } = useMemo(() => {
-                const vSurv = surveilans.filter(s => s.status === 'VERIFIED' && s.metadata.bulan === filterMonth && (filterUnit === 'ALL' || s.metadata.unit === filterUnit));
-                const vAud = audits.filter(a => a.status === 'VERIFIED' && a.metadata.tanggal.startsWith(filterMonth) && (filterUnit === 'ALL' || a.metadata.unit === filterUnit));
-                
-                let den = { hr:0, kat:0, cvc:0, vent:0, iv:0, op:0 };
-                denominators.filter(d => d.bulan === filterMonth && (filterUnit === 'ALL' || d.unit === filterUnit)).forEach(d => {
-                    den.hr += d.hariRawat; den.kat += d.hariKateter; den.cvc += d.hariCVC; den.vent += d.hariVentilator; den.iv += d.hariIVLine; den.op += d.jumlahOperasi;
-                });
-
-                let c = { isk:0, iadp:0, vap:0, pleb:0, ido:0 };
-                vSurv.forEach(s => { c.isk += s.data.ISK.length; c.iadp += s.data.IADP.length; c.vap += s.data.VAP.length; c.pleb += s.data.PLEBITIS.length; c.ido += s.data.IDO.length; });
-
-                const rData = [
-                    { name: 'ISK (‰)', rate: den.kat>0 ? Number(((c.isk/den.kat)*1000).toFixed(2)) : 0, target: TARGETS.ISK, case: c.isk, dn: den.kat },
-                    { name: 'IADP (‰)', rate: den.cvc>0 ? Number(((c.iadp/den.cvc)*1000).toFixed(2)) : 0, target: TARGETS.IADP, case: c.iadp, dn: den.cvc },
-                    { name: 'VAP (‰)', rate: den.vent>0 ? Number(((c.vap/den.vent)*1000).toFixed(2)) : 0, target: TARGETS.VAP, case: c.vap, dn: den.vent },
-                    { name: 'Plebitis (‰)', rate: den.iv>0 ? Number(((c.pleb/den.iv)*1000).toFixed(2)) : 0, target: TARGETS.PLEBITIS, case: c.pleb, dn: den.iv },
-                    { name: 'IDO (%)', rate: den.op>0 ? Number(((c.ido/den.op)*100).toFixed(2)) : 0, target: TARGETS.IDO, case: c.ido, dn: den.op },
-                ];
-
-                let tComp=0, cntAud=0;
-                const processA = (arr) => arr.forEach(r => { let score = calculateCompliance(r.answers); if(score>0){ tComp+=score; cntAud++; } });
-                vAud.forEach(a => { processA(a.data.CAUTI||[]); processA(a.data.CLABSI||[]); processA(a.data.VAP||[]); processA(a.data.IDO||[]); });
-
-                return { rateData: rData, compData: [], kpi: { cases: c.isk+c.iadp+c.vap+c.pleb+c.ido, avgComp: cntAud>0 ? Math.round(tComp/cntAud) : 0, noDen: (den.kat+den.cvc+den.vent+den.iv+den.op === 0) } };
-            }, [audits, surveilans, denominators, filterMonth, filterUnit]);
-
-            return (
-                <div className="space-y-6">
-                    <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
-                        <div>
-                            <h2 className="text-2xl font-bold text-slate-800">Dashboard Mutu PPI</h2>
-                            <p className="text-sm text-slate-500">Analisis Insidence Rate HAIs vs Target Batas Nasional (Kemenkes/KARS).</p>
-                        </div>
-                        <div className="flex space-x-2 bg-white p-1 rounded-lg border shadow-sm items-center h-fit">
-                            <i className="fa-solid fa-filter text-slate-400 ml-2"></i>
-                            <input type="month" value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} className="border-none bg-slate-50 px-2 py-1 rounded text-sm font-bold outline-none text-slate-700" />
-                            <select value={filterUnit} onChange={e=>setFilterUnit(e.target.value)} className="border-none bg-slate-50 px-2 py-1 rounded text-sm font-bold outline-none text-slate-700">
-                                <option value="ALL">Semua Unit</option>
-                                {units.map(u => <option key={u} value={u}>{u}</option>)}
-                            </select>
-                        </div>
-                    </div>
-
-                    {kpi.noDen && (
-                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start text-amber-800 shadow-sm animate-pulse">
-                            <i className="fa-solid fa-circle-exclamation text-xl mr-3 shrink-0 mt-0.5"></i>
-                            <div>
-                                <h4 className="font-bold text-sm">Peringatan: Data Denominator (Hari Alat) Periode Ini Belum Tersedia</h4>
-                                <p className="text-xs mt-1">Sistem mendeteksi bahwa total hari terpasang alat (pembagi) adalah 0 pada periode/unit yang dipilih. <b>Tingkat Insiden / Rate (‰) tidak dapat dihitung dengan benar jika nilai pembagi kosong.</b> Harap tugaskan IPCLN untuk menginput Denominator akhir bulan melalui menu Denominator.</p>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white border border-slate-200 p-5 rounded-xl flex items-center space-x-4 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-50 rounded-bl-full -mr-4 -mt-4 z-0"></div>
-                            <div className="p-3 bg-emerald-100 rounded-lg shadow-sm z-10"><i className="fa-solid fa-clipboard-check text-emerald-600 text-xl"></i></div>
-                            <div className="z-10"><p className="text-xs font-bold text-slate-500 uppercase">Rata-rata Kepatuhan Bundle</p><h4 className="text-2xl font-bold text-emerald-700">{kpi.avgComp}%</h4></div>
-                        </div>
-                        <div className="bg-white border border-slate-200 p-5 rounded-xl flex items-center space-x-4 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-rose-50 rounded-bl-full -mr-4 -mt-4 z-0"></div>
-                            <div className="p-3 bg-rose-100 rounded-lg shadow-sm z-10"><i className="fa-solid fa-chart-line text-rose-600 text-xl"></i></div>
-                            <div className="z-10"><p className="text-xs font-bold text-slate-500 uppercase">Total Kasus Infeksi (HAIs)</p><h4 className="text-2xl font-bold text-rose-700">{kpi.cases} Kasus</h4></div>
-                        </div>
-                        <div className="bg-white border border-slate-200 p-5 rounded-xl flex items-center space-x-4 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-blue-50 rounded-bl-full -mr-4 -mt-4 z-0"></div>
-                            <div className="p-3 bg-blue-100 rounded-lg shadow-sm z-10"><i className="fa-solid fa-database text-blue-600 text-xl"></i></div>
-                            <div className="z-10"><p className="text-xs font-bold text-slate-500 uppercase">Status Kelengkapan Data</p><h4 className={`text-lg font-bold ${kpi.noDen ? 'text-amber-600' : 'text-blue-700'}`}>{kpi.noDen ? 'Incomplete (No Denominator)' : 'Siap Cetak Laporan'}</h4></div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mt-6">
-                        <h3 className="text-base font-bold text-slate-800 mb-6 flex items-center">
-                            <i className="fa-solid fa-chart-simple text-teal-600 mr-2"></i> Grafik Insidence Rate HAIs vs Target Batas Atas RS
-                        </h3>
-                        <div className="h-80 w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={rateData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                    <XAxis dataKey="name" tick={{fontSize: 12, fill: '#475569'}} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{fontSize: 12, fill: '#475569'}} axisLine={false} tickLine={false} />
-                                    <RechartsTooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} formatter={(val, name, props) => { if(name==='Target Maks (RS)') return [val, 'Batas Target']; return [`${val} (Jml Kasus: ${props.payload.case} | Hr Alat: ${props.payload.dn})`, 'Rate Insiden']; }} />
-                                    <Legend wrapperStyle={{fontSize: '12px'}} />
-                                    <Bar dataKey="rate" name="Rate Insiden Aktual" barSize={50} radius={[4, 4, 0, 0]}>
-                                        {rateData.map((e, i) => <Cell key={i} fill={e.rate > e.target ? '#ef4444' : '#14b8a6'} />)}
-                                    </Bar>
-                                    <Line type="step" dataKey="target" name="Target Maks (RS)" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                                </ComposedChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="flex items-center justify-center space-x-6 text-[10px] text-slate-500 mt-4 border-t border-slate-100 pt-4">
-                            <div className="flex items-center"><div className="w-3 h-3 bg-teal-500 rounded-sm mr-2"></div> Di Bawah Target Nasional (Mutu Aman)</div>
-                            <div className="flex items-center"><div className="w-3 h-3 bg-red-500 rounded-sm mr-2"></div> Melebihi Batas Target Nasional (Perlu Evaluasi)</div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<HAIsApp />);
+        root.render(<App />);
     </script>
 </body>
 </html>
