@@ -5,27 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem PPI Terpadu - HAIs</title>
     
-    <!-- Tailwind CSS (Untuk Styling) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- FontAwesome (Untuk Icon) -->
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- Babel (Untuk menerjemahkan JSX ke JavaScript murni di browser) -->
+    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Recharts (Untuk Grafik Dashboard) -->
+    <!-- Recharts -->
     <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
     <script src="https://unpkg.com/react-is/umd/react-is.production.min.js"></script>
     <script src="https://unpkg.com/recharts@2.1.9/umd/Recharts.js"></script>
     
-    <!-- Firebase Compat (Database Cloud) -->
+    <!-- Firebase Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans antialiased">
     <div id="root"></div>
@@ -35,7 +44,7 @@
         const { Bar, XAxis, YAxis, CartesianGrid, Tooltip: RechartsTooltip, Legend, ResponsiveContainer, Line, Cell, ComposedChart } = window.Recharts;
 
         // ============================================================================
-        // KONFIGURASI FIREBASE (GANTI DENGAN KREDENSIAL FIRESTORE ANDA)
+        // KONFIGURASI FIREBASE
         // ============================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyAF8g0KAw1MNqqOiLYJQnoQv4pdUY78BvI",
@@ -74,6 +83,7 @@
                     try {
                         const item = window.localStorage.getItem(`ppi_${collectionName}`);
                         if (item) setData(JSON.parse(item));
+                        else setData(initialData); // Use defaults if empty
                     } catch (error) {
                         console.error(error);
                     }
@@ -119,7 +129,7 @@
 
         const AUDIT_BUNDLES = {
             CAUTI: { title: 'Bundle CAUTI (ISK)', columns: [
-                { key: 'indikasi', label: 'Indikasi', desc: 'Indikasi pemasangan kateter terdokumentasi di CPPT / rekam medis (bukan hanya kenyamanan pasien)' }, 
+                { key: 'indikasi', label: 'Indikasi', desc: 'Indikasi pemasangan kateter terdokumentasi di rekam medis (bukan hanya kenyamanan pasien)' }, 
                 { key: 'closedSystem', label: 'Closed Sys', desc: 'Sistem drainase tertutup (closed system) terpasang dan tidak ada kebocoran' }, 
                 { key: 'bagBawah', label: 'Bag Bawah', desc: 'Posisi drainage bag: selalu di bawah pinggang pasien — tidak pernah di lantai atau lebih tinggi dari kandung kemih' }, 
                 { key: 'selangAman', label: 'Slg Aman', desc: 'Selang kateter tidak tertekuk / terjepit / tersumbat' }, 
@@ -127,25 +137,25 @@
                 { key: 'perawatan', label: 'Rawat Harian', desc: 'Perawatan kateter harian dilakukan (meatus uretra dibersihkan sesuai SPO)' }
             ] },
             CLABSI: { title: 'Bundle CLABSI (IADP)', columns: [
-                { key: 'indikasi', label: 'Indikasi', desc: 'Indikasi pemasangan CVC / line sentral terdokumentasi dan dievaluasi setiap hari' }, 
-                { key: 'maxBarrier', label: 'Max Barrier', desc: 'Maximal Sterile Barrier Precautions saat insersi: cap, masker, gaun steril, sarung tangan steril, draping steril seluruh tubuh' }, 
-                { key: 'antisepsis', label: 'Antisepsis', desc: 'Antisepsis kulit menggunakan chlorhexidine ≥ 0.5% dalam alkohol — dibiarkan kering sebelum insersi' }, 
-                { key: 'dressing', label: 'Dressing', desc: 'Dressing / verban insersi bersih, kering, dan utuh — diganti sesuai jadwal atau segera bila kotor/basah' }, 
-                { key: 'scrubHub', label: 'Scrub Hub', desc: 'Port / hub line dibersihkan dengan alkohol 70% minimal 15 detik setiap kali sebelum akses (scrub the hub)' }, 
+                { key: 'indikasi', label: 'Indikasi', desc: 'Indikasi pemasangan CVC terdokumentasi dan dievaluasi setiap hari' }, 
+                { key: 'maxBarrier', label: 'Max Barrier', desc: 'Maximal Sterile Barrier Precautions saat insersi: cap, masker, gaun steril, sarung tangan steril, draping steril' }, 
+                { key: 'antisepsis', label: 'Antisepsis', desc: 'Antisepsis kulit menggunakan chlorhexidine ≥ 0.5% dalam alkohol' }, 
+                { key: 'dressing', label: 'Dressing', desc: 'Dressing / verban insersi bersih, kering, dan utuh' }, 
+                { key: 'scrubHub', label: 'Scrub Hub', desc: 'Port / hub dibersihkan dengan alkohol 70% min 15 detik sebelum akses (scrub the hub)' }, 
                 { key: 'reassess', label: 'Reassess', desc: 'Kebutuhan CVC dievaluasi setiap hari — line dicabut segera bila tidak diperlukan' }
             ] },
             VAP: { title: 'Bundle VAP', columns: [
-                { key: 'hob', label: 'HOB 30°', desc: 'Posisi kepala tempat tidur 30–45° (semi-recumbent) — kecuali ada kontraindikasi medis' }, 
-                { key: 'oralHygiene', label: 'Oral Hyg', desc: 'Oral hygiene dilakukan minimal setiap 4 jam menggunakan chlorhexidine 0.12% atau sesuai protokol' }, 
-                { key: 'cuff', label: 'Cuff Pres', desc: 'Tekanan cuff (manset) ETT dipertahankan 20–30 cmH₂O — diperiksa dan dicatat setiap shift' }, 
-                { key: 'satSbt', label: 'SAT/SBT', desc: 'Sedation vacation (SAT) dan Spontaneous Breathing Trial (SBT) dilakukan setiap hari bila pasien memenuhi kriteria' }, 
-                { key: 'waterTrap', label: 'Water Trap', desc: 'Air dalam water trap / humidifier dikosongkan secara berkala agar tidak masuk ke jalan napas' }, 
-                { key: 'extubasi', label: 'Extubasi', desc: 'Kebutuhan ventilator mekanik dievaluasi setiap hari untuk rencana extubasi sedini mungkin' }
+                { key: 'hob', label: 'HOB 30°', desc: 'Posisi kepala tempat tidur 30–45° (semi-recumbent)' }, 
+                { key: 'oralHygiene', label: 'Oral Hyg', desc: 'Oral hygiene dilakukan minimal setiap 4 jam menggunakan chlorhexidine 0.12%' }, 
+                { key: 'cuff', label: 'Cuff Pres', desc: 'Tekanan cuff ETT dipertahankan 20–30 cmH₂O' }, 
+                { key: 'satSbt', label: 'SAT/SBT', desc: 'Sedation vacation (SAT) dan Spontaneous Breathing Trial (SBT) dilakukan setiap hari' }, 
+                { key: 'waterTrap', label: 'Water Trap', desc: 'Air dalam water trap dikosongkan secara berkala' }, 
+                { key: 'extubasi', label: 'Extubasi', desc: 'Kebutuhan ventilator dievaluasi setiap hari untuk rencana extubasi' }
             ] },
             IDO: { title: 'Bundle IDO', columns: [
-                { key: 'profilaksis', label: 'Profilaksis', desc: 'Profilaksis antibiotik diberikan dalam 60 menit sebelum insisi (30 menit untuk fluorokuinolon / vankomisin)' }, 
-                { key: 'dosis', label: 'Dosis/Jenis', desc: 'Jenis dan dosis antibiotik profilaksis sesuai panduan / formularium RS' }, 
-                { key: 'abStop', label: 'Ab Stop', desc: 'Antibiotik profilaksis dihentikan dalam 24 jam pasca operasi (48 jam untuk operasi jantung)' }, 
+                { key: 'profilaksis', label: 'Profilaksis', desc: 'Profilaksis antibiotik diberikan dalam 60 menit sebelum insisi' }, 
+                { key: 'dosis', label: 'Dosis/Jenis', desc: 'Jenis dan dosis antibiotik profilaksis sesuai panduan RS' }, 
+                { key: 'abStop', label: 'Ab Stop', desc: 'Antibiotik profilaksis dihentikan dalam 24 jam pasca operasi' }, 
                 { key: 'normotermi', label: 'Normotermi', desc: 'Suhu tubuh pasien terjaga (normotermia intraoperatif): target 36–37.5°C' }, 
                 { key: 'gd', label: 'GD Kntrl', desc: 'Kadar glukosa darah intraoperatif dan 48 jam pasca operasi terkontrol (< 200 mg/dL)' }, 
                 { key: 'ssc', label: 'SSC', desc: 'Surgical Safety Checklist (Sign-In, Time-Out, Sign-Out) dilengkapi dengan benar' }
@@ -153,71 +163,109 @@
         };
 
         const SURVEILANS_CONFIG = {
-            IDO: {
-                def: "Infeksi yang terjadi pada atau dekat lokasi insisi bedah dalam 30 hari pasca operasi (atau 90 hari untuk prosedur dengan implant), diklasifikasikan sebagai: Superfisial (S), Dalam/Deep (D), atau Organ/Space (O).",
-                kriteria: [
-                    "1. Superfisial (S): Infeksi kulit/subkutan di lokasi insisi dalam 30 hari. Tanda: nyeri/bengkak/kemerahan/panas + drainase purulen atau kultur positif.",
-                    "2. Dalam/Deep (D): Infeksi jaringan lunak dalam (fasia/otot) dalam 30 hari. Tanda: demam > 38°C + nyeri tekan + dehiscence/abses dalam.",
-                    "3. Organ/Space (O): Infeksi pada organ atau rongga tubuh yang dibuka/dimanipulasi saat operasi dalam 30/90 hari. Dibuktikan dengan kultur positif, abses, atau radiologi."
-                ],
-                cols: [ { k: 'tglOperasi', l: 'Tgl Operasi', t: 'date'}, { k: 'jenisOperasi', l: 'Jenis Operasi', t: 'text'}, { k: 'kelasOperasi', l: 'Kelas (I-IV)', t: 'select', opts: ['I (Bersih)', 'II (Bersih Terkontaminasi)', 'III (Terkontaminasi)', 'IV (Kotor)']}, { k: 'tglGejala', l: 'Tgl Gejala IDO', t: 'date'}, { k: 'klasifikasi', l: 'Klasifikasi IDO', t: 'select', opts: ['Superfisial (S)', 'Dalam (D)', 'Organ/Space (O)']}, { k: 'kultur', l: 'Kultur (+/-)', t: 'select', opts: ['Belum Ada', 'Positif (+)', 'Negatif (-)']}, { k: 'patogen', l: 'Patogen', t: 'text'} ]
+            IDO: { def: "Infeksi lokasi bedah 30 hari pasca operasi (atau 90 hari untuk implant).", kriteria: ["Superfisial", "Dalam/Deep", "Organ/Space"], cols: [ { k: 'tglOperasi', l: 'Tgl Operasi', t: 'date'}, { k: 'jenisOperasi', l: 'Jenis Operasi', t: 'text'}, { k: 'kelasOperasi', l: 'Kelas (I-IV)', t: 'select', opts: ['I (Bersih)', 'II (Bersih Terkontaminasi)', 'III (Terkontaminasi)', 'IV (Kotor)']}, { k: 'tglGejala', l: 'Tgl Gejala', t: 'date'}, { k: 'klasifikasi', l: 'Klasifikasi', t: 'select', opts: ['Superfisial', 'Dalam', 'Organ/Space']}, { k: 'patogen', l: 'Patogen', t: 'text'} ] },
+            ISK: { def: "Infeksi saluran kemih kateter > 2 hari kalender.", kriteria: ["Gejala klinis (demam, disuria)", "Kultur urin positif"], cols: [ { k: 'tglPasang', l: 'Tgl Pasang', t: 'date'}, { k: 'tglLepas', l: 'Tgl Lepas', t: 'date'}, { k: 'tglGejala', l: 'Tgl Gejala', t: 'date'}, { k: 'kultur', l: 'Hasil Kultur', t: 'select', opts: ['Belum Ada', 'Positif', 'Negatif']}, { k: 'patogen', l: 'Patogen', t: 'text'} ] },
+            IADP: { def: "Infeksi aliran darah sentral > 2 hari kalender.", kriteria: ["Hemokultur positif", "Bukan dari infeksi lain"], cols: [ { k: 'tglPasang', l: 'Tgl Pasang', t: 'date'}, { k: 'tglLepas', l: 'Tgl Lepas', t: 'date'}, { k: 'tglGejala', l: 'Tgl Gejala', t: 'date'}, { k: 'kultur', l: 'Hemokultur', t: 'select', opts: ['Belum Ada', 'Positif', 'Negatif']}, { k: 'patogen', l: 'Patogen', t: 'text'} ] },
+            VAP: { def: "Pneumonia pada ventilator ≥ 48 jam.", kriteria: ["Infiltrat baru di rontgen", "Gejala klinis/leukositosis"], cols: [ { k: 'tglIntubasi', l: 'Tgl Intubasi', t: 'date'}, { k: 'tglEkstubasi', l: 'Tgl Ekstubasi', t: 'date'}, { k: 'tglGejala', l: 'Tgl Gejala', t: 'date'}, { k: 'rontgen', l: 'Rontgen', t: 'text'}, { k: 'patogen', l: 'Patogen', t: 'text'} ] },
+            PLEBITIS: { def: "Inflamasi vena perifer IV line.", kriteria: ["Derajat 1 sampai 5"], cols: [ { k: 'lokasi', l: 'Lokasi IV', t: 'text'}, { k: 'tglPasang', l: 'Tgl Pasang', t: 'date'}, { k: 'tglGejala', l: 'Tgl Gejala', t: 'date'}, { k: 'derajat', l: 'Derajat', t: 'select', opts: ['1', '2', '3', '4', '5']} ] }
+        };
+
+        const KEWASPADAAN_CONFIG = {
+            HH: { title: 'Kebersihan Tangan (Hand Hygiene)', type: 'HH' },
+            APD: { 
+                title: 'Penggunaan APD', type: 'CHECKLIST',
+                sections: [
+                    { name: 'Ketersediaan APD', items: ['Masker bedah tersedia dalam jumlah cukup di area tindakan', 'Masker N95 tersedia di area yang memerlukan kewaspadaan airborne', 'Sarung tangan periksa (berbagai ukuran S/M/L) tersedia', 'Sarung tangan steril tersedia untuk prosedur aseptik', 'Gaun/gown isolasi tersedia di unit', 'Face shield / pelindung mata tersedia di area risiko percikan', 'Penutup kepala (bouffant cap) tersedia', 'APD diletakkan di tempat yang mudah dijangkau sebelum masuk kamar pasien'] },
+                    { name: 'Pemilihan APD Sesuai Indikasi', items: ['Petugas memilih jenis APD sesuai jenis tindakan dan risiko (lihat matriks APD)', 'Petugas menggunakan masker N95 (bukan masker bedah) untuk kewaspadaan airborne', 'Petugas menggunakan sarung tangan dan gaun untuk kewaspadaan kontak', 'Petugas menggunakan masker bedah untuk kewaspadaan droplet (jarak ≤ 1-2 m)', 'Tidak menggunakan APD secara berlebihan yang tidak diperlukan sesuai indikasi'] },
+                    { name: 'Prosedur Donning (Memakai APD)', items: ['Petugas melakukan hand hygiene SEBELUM memakai APD', 'Urutan donning diikuti: Gaun → Masker → Pelindung Mata → Sarung Tangan', 'Masker N95: dilakukan fit check sebelum memasuki area (tiupan dan hisapan)', 'Gaun diikatkan dengan benar di leher dan pinggang', 'Sarung tangan ditarik menutupi manset gaun'] },
+                    { name: 'Prosedur Doffing (Melepas APD)', items: ['Doffing dilakukan di luar kamar isolasi (kecuali sarung tangan)', 'Sarung tangan dilepas pertama menggunakan teknik aman (tidak menyentuh permukaan luar)', 'Hand hygiene dilakukan SETELAH melepas sarung tangan', 'Face shield/pelindung mata dilepas dari tali belakang — tidak menyentuh bagian depan', 'Gaun digulung ke dalam (sisi terkontaminasi ke dalam) saat dilepas', 'Masker dilepas terakhir, dipegang dari tali — tidak menyentuh permukaan masker', 'Hand hygiene dilakukan SETELAH semua APD dilepas'] },
+                    { name: 'Pengelolaan APD Bekas Pakai', items: ['APD sekali pakai dibuang ke kantong limbah infeksius (kuning) segera setelah dilepas', 'APD reusable (face shield, kacamata) disimpan/didekontaminasi sesuai prosedur', 'Masker N95 reuse disimpan dalam kantong kertas berlabel nama dan diberi keterangan jumlah pemakaian', 'APD tidak dibawa keluar area klinis atau digunakan di area publik'] }
+                ]
             },
-            ISK: {
-                def: "Infeksi saluran kemih yang terjadi pada pasien yang menggunakan kateter urin lebih dari 2 hari kalender (hari insersi = hari 1), dibuktikan dengan gejala klinis dan/atau kultur urin positif dengan ≥ 10⁵ CFU/mL.",
-                kriteria: [
-                    "1. Pasien terpasang kateter urin > 2 hari kalender pada saat onset gejala atau 1 hari sebelumnya.",
-                    "2. Setidaknya satu dari: demam > 38°C, urgensi berkemih, frekuensi, disuria, atau nyeri suprapubik.",
-                    "3. Kultur urin positif dengan ≥ 10⁵ CFU/mL dari ≤ 2 jenis mikroorganisme.",
-                    "4. Bukan ISK yang sudah ada sebelum kateter dipasang."
-                ],
-                cols: [ { k: 'tglPasang', l: 'Tgl Pasang', t: 'date'}, { k: 'tglLepas', l: 'Tgl Lepas', t: 'date'}, { k: 'tglGejala', l: 'Tgl Gejala ISK', t: 'date'}, { k: 'kultur', l: 'Hasil Kultur', t: 'select', opts: ['Belum Ada', 'Positif (+)', 'Negatif (-)']}, { k: 'patogen', l: 'Patogen', t: 'text'} ]
+            LINGKUNGAN: {
+                title: 'Kebersihan Lingkungan & Disinfeksi', type: 'CHECKLIST',
+                sections: [
+                    { name: 'Kebersihan Umum Ruangan', items: ['Lantai bersih, tidak ada kotoran/debu/cairan yang tertinggal', 'Dinding bersih, tidak ada noda atau kontaminasi', 'Langit-langit bersih, tidak ada debu atau jamur', 'Furniture (kursi, meja, lemari) bersih dan tidak berdebu', 'Tidak ada barang tidak perlu / kelebihan yang menghambat pembersihan'] },
+                    { name: 'Pembersihan Permukaan Sentuh Tinggi (High-Touch)', items: ['Gagang pintu dibersihkan dan didisinfeksi minimal 2× sehari', 'Saklar lampu dibersihkan dan didisinfeksi minimal 2× sehari', 'Rel tempat tidur pasien dibersihkan dan didisinfeksi setiap hari', 'Tombol bel pasien dan remote TV dibersihkan minimal 2× sehari', 'Meja samping tempat tidur pasien dibersihkan setiap hari', 'Panel kontrol monitor, infus pump, dan peralatan medis dilap setiap hari', 'Tiang infus dan standar O2 dilap setiap hari'] },
+                    { name: 'Kamar Mandi / Toilet', items: ['Toilet dibersihkan dan didisinfeksi minimal 3× sehari', 'Wastafel, keran, dan cermin dibersihkan minimal 2× sehari', 'Lantai kamar mandi tidak licin dan tidak ada genangan air', 'Bak mandi / shower dibersihkan setelah setiap penggunaan', 'Tanda "Lantai Basah" dipasang saat lantai kamar mandi basah'] },
+                    { name: 'Prosedur dan Teknik Pembersihan', items: ['Sistem kode warna kain lap diikuti (merah toilet, hijau dapur, biru umum)', 'Arah pembersihan dari atas ke bawah dan dari area bersih ke kotor', 'Teknik one-way wiping (satu arah) digunakan, tidak maju-mundur', 'Kain lap diganti antar ruangan / antar area berbeda', 'Mop floor berganti antar kamar pasien atau setiap 4-5 kamar', 'Air pada ember mopping diganti secara berkala'] },
+                    { name: 'Terminal Cleaning', items: ['Terminal cleaning dilakukan setiap kali pasien pulang/pindah', 'Tanda "TERMINAL CLEANING" dipasang selama proses', 'Pembersihan dilakukan dari atas ke bawah, langit-langit s.d. lantai', 'Tempat tidur dibersihkan seluruh permukaannya termasuk bagian bawah', 'Kamar tidak dibuka untuk pasien baru sebelum verifikasi IPCLN'] }
+                ]
             },
-            IADP: {
-                def: "Infeksi aliran darah yang terjadi pada pasien yang menggunakan central venous catheter (CVC) lebih dari 2 hari kalender, dibuktikan dengan hemokultur positif yang tidak berhubungan dengan infeksi di tempat lain (primary bloodstream infection).",
-                kriteria: [
-                    "1. Pasien terpasang CVC/line sentral > 2 hari kalender pada saat onset gejala atau 1 hari sebelumnya.",
-                    "2. Satu atau lebih hemokultur positif dari organisme yang bukan merupakan kontaminan umum.",
-                    "3. Untuk organisme kontaminan umum: ≥ 2 hemokultur positif dari sample berbeda dalam 2 hari.",
-                    "4. Bukan infeksi yang bersumber dari tempat lain (seperti UTI, pneumonia, atau IDO)."
-                ],
-                cols: [ { k: 'tglPasang', l: 'Tgl Pasang CVC', t: 'date'}, { k: 'tglLepas', l: 'Tgl Lepas CVC', t: 'date'}, { k: 'tglGejala', l: 'Tgl Gejala IADP', t: 'date'}, { k: 'kultur', l: 'Hemokultur', t: 'select', opts: ['Belum Ada', 'Positif (+)', 'Negatif (-)']}, { k: 'patogen', l: 'Patogen', t: 'text'} ]
+            LINEN: {
+                title: 'Pengelolaan Linen / Laundry', type: 'CHECKLIST',
+                sections: [
+                    { name: 'Pengumpulan Linen di Unit Perawatan', items: ['Kantong linen kotor tersedia dan berlabel di setiap kamar / area perawatan', 'Linen kotor langsung dimasukkan ke kantong tanpa dikibas-ngibaskan', 'Petugas menggunakan APD (sarung tangan, apron, masker) saat mengumpulkan linen kotor', 'Linen infeksius dimasukkan ke kantong kuning berlabel biohazard', 'Linen kotor TIDAK disortir di ruang perawatan pasien'] },
+                    { name: 'Transportasi Linen', items: ['Trolley untuk linen bersih dan kotor BERBEDA dan diberi label yang jelas', 'Trolley linen kotor dalam kondisi tertutup saat transportasi', 'Jalur transportasi linen kotor TIDAK bersilangan dengan jalur linen bersih', 'Linen dikirim ke laundry dalam waktu ≤ 4 jam dari pengumpulan', 'Trolley kotor dibersihkan dan didisinfeksi setelah mengantarkan linen'] },
+                    { name: 'Area dan Prosedur Laundry', items: ['Area penerimaan linen kotor TERPISAH dari area pencucian bersih dan penyimpanan', 'Sortir linen kotor dilakukan di area laundry dengan APD lengkap', 'Suhu mesin cuci mencapai minimal 70°C/25 menit atau 80°C untuk linen infeksius', 'Deterjen dan disinfektan laundry digunakan sesuai dosis yang ditetapkan', 'Linen infeksius dicuci terpisah dari linen non-infeksius', 'Proses pelipatan dilakukan di area bersih terpisah dari area penerimaan/sortir'] },
+                    { name: 'Penyimpanan dan Distribusi Linen Bersih', items: ['Linen bersih disimpan di lemari/rak tertutup, bersih, kering, ≥ 30 cm dari lantai', 'Sistem FIFO diterapkan (linen yang lebih dulu masuk digunakan lebih dulu)', 'Linen bersih tidak disimpan berdekatan dengan area linen kotor', 'Distribusi linen bersih menggunakan trolley bersih tertutup berlabel "LINEN BERSIH"', 'Linen dengan kemasan rusak atau lembab tidak digunakan langsung'] }
+                ]
             },
-            VAP: {
-                def: "Pneumonia yang berkembang pada pasien yang menggunakan ventilator mekanik invasif selama ≥ 48 jam, dibuktikan dengan gambaran infiltrat baru/progresif pada rontgen thorax disertai kriteria klinis/laboratorium.",
-                kriteria: [
-                    "1. Pasien menggunakan ventilator mekanik invasif ≥ 48 jam pada saat onset atau 1 hari sebelumnya.",
-                    "2. Infiltrat baru atau progresif pada rontgen thorax yang tidak dapat dijelaskan penyebab lain.",
-                    "3. Dua dari: demam > 38°C atau hipotermia < 36°C; leukositosis > 12.000 atau leukopenia < 4.000; sekresi trakea purulen.",
-                    "4. Konfirmasi kultur (BAL, aspirat trakeal, atau kultur darah) lebih kuat sebagai bukti."
-                ],
-                cols: [ { k: 'tglIntubasi', l: 'Tgl Intubasi', t: 'date'}, { k: 'tglEkstubasi', l: 'Tgl Ekstubasi', t: 'date'}, { k: 'tglGejala', l: 'Tgl Gejala VAP', t: 'date'}, { k: 'rontgen', l: 'Rontgen Thorax', t: 'text'}, { k: 'patogen', l: 'Kultur Patogen', t: 'text'} ]
+            TAJAM: {
+                title: 'Pengelolaan Benda Tajam', type: 'CHECKLIST',
+                sections: [
+                    { name: 'Ketersediaan dan Penempatan', items: ['Safety box tersedia di setiap titik tindakan (dalam jangkauan ≤ 1 meter)', 'Safety box diletakkan setinggi mata atau antara pinggang dan bahu — tidak di lantai', 'Safety box masih dalam kondisi baik: tidak bocor, tidak robek, tidak basah', 'Safety box berwarna kuning dengan label "BENDA TAJAM INFEKSIUS / BIOHAZARD"', 'Tidak ada safety box yang terisi > ¾ (melebihi batas garis pengisian)'] },
+                    { name: 'Prosedur Pembuangan (No-Recap)', items: ['Petugas membuang jarum langsung ke safety box TANPA menutup terlebih dahulu (no-recap)', 'Bila recap terpaksa dilakukan: menggunakan teknik one-hand scoop (satu tangan)', 'Jarum tidak dibengkokkan, dipatahkan, atau dilepas dari syringe dengan tangan', 'Scalpel diletakkan di neutral zone / kidney dish — tidak diserahkan tangan ke tangan', 'Benda tajam dibuang ke safety box secepatnya setelah digunakan', 'Tidak ada benda tajam yang tertinggal di luar safety box (di meja, tempat tidur, lantai)', 'Petugas tidak memasukkan tangan ke dalam safety box'] },
+                    { name: 'Transportasi dan Pengelolaan Lanjutan', items: ['Safety box tidak dibuka kembali setelah tutup dikunci', 'Safety box penuh diambil oleh CS menggunakan troli tertutup khusus benda tajam', 'CS menggunakan APD: sarung tangan tebal, alas kaki tertutup saat mengangkut', 'Safety box TIDAK dilempar, diperas, atau ditekan saat transportasi', 'Safety box dikirim ke TPS B3 dengan dokumentasi log harian benda tajam'] },
+                    { name: 'Keselamatan Staf (NSI)', items: ['Staf pernah mendapat pelatihan pengelolaan benda tajam (ada sertifikat/bukti)', 'Prosedur needlestick injury (NSI) diketahui oleh staf — ada poster/panduan di unit', 'Kit NSI (sabun, povidon iodin, form laporan) tersedia di unit'] }
+                ]
             },
-            PLEBITIS: {
-                def: "Inflamasi vena perifer yang ditandai dengan nyeri, kemerahan, bengkak, dan/atau teraba indurasi sepanjang jalur vena, pada lokasi pemasangan IV line perifer, yang terjadi setelah pemasangan IV line.",
-                kriteria: [
-                    "1. Derajat 1: Kemerahan di lokasi insersi IV line, dengan atau tanpa nyeri lokal.",
-                    "2. Derajat 2: Nyeri di lokasi insersi, dengan kemerahan dan/atau bengkak.",
-                    "3. Derajat 3: Nyeri pada jalur vena, kemerahan, bengkak. Cord (pengerasan vena) teraba.",
-                    "4. Derajat 4: Nyeri sepanjang jalur vena, kemerahan, bengkak, cord teraba > 2.5 cm. Eksudat purulen.",
-                    "5. Derajat 5: Semua tanda di atas disertai demam, jaringan nekrotik."
-                ],
-                cols: [ { k: 'lokasi', l: 'Lokasi IV Line', t: 'text'}, { k: 'tglPasang', l: 'Tgl Pasang', t: 'date'}, { k: 'tglGejala', l: 'Tgl Muncul', t: 'date'}, { k: 'derajat', l: 'Derajat Plebitis', t: 'select', opts: ['1', '2', '3', '4', '5']}, { k: 'pemasang', l: 'Petugas Pemasang', t: 'text'} ]
+            CSSD: {
+                title: 'Sterilisasi CSSD', type: 'CHECKLIST',
+                sections: [
+                    { name: 'Area dan Alur Kerja CSSD', items: ['Area CSSD memiliki pembagian zona yang jelas: kotor, bersih, steril (traffic flow satu arah)', 'Alur alat: penerimaan kotor → dekontaminasi → pengemasan → sterilisasi → penyimpanan steril', 'Akses ke area steril terbatas — hanya staf terlatih yang berwenang', 'Area penerimaan alat kotor terpisah secara fisik dari area penyimpanan alat steril', 'Tekanan udara zona bersih/steril lebih positif dari zona kotor'] },
+                    { name: 'Dekontaminasi Awal dan Cleaning', items: ['APD lengkap digunakan di area dekontaminasi: sarung tangan tebal, gaun, masker, pelindung mata', 'Alat direndam/dibilas (pre-cleaning) segera setelah digunakan, tidak dibiarkan mengering', 'Larutan enzymatic cleaner digunakan untuk merendam alat sesuai dosis dan waktu', 'Pembersihan mekanik dilakukan dengan sikat — semua lekukan dibersihkan', 'Alat dibilas dengan air bersih dan dikeringkan sempurna sebelum dikemas'] },
+                    { name: 'Pengemasan Alat', items: ['Jenis kemasan sesuai: pouch untuk alat kecil, container rigid untuk set bedah', 'Alat dikemas dalam kondisi kering sempurna (alat basah tidak dikemas)', 'Label kemasan berisi: nama alat, tanggal kemas/sterilisasi, tanggal exp, nomor lot, inisial staf', 'Chemical indicator (CI) Kelas 1 (indicator tape) dipasang di luar setiap kemasan', 'Chemical indicator internal (Kelas 5 atau 6) dimasukkan ke dalam setiap kemasan set bedah', 'Kemasan tidak ada yang robek, basah, atau terbuka sebelum sterilisasi'] },
+                    { name: 'Proses Sterilisasi', items: ['Parameter siklus autoklaf sesuai standar', 'Siklus sterilisasi dicatat dalam logbook: tanggal, waktu, suhu, tekanan, operator', 'Biological indicator (BI) digunakan minimal 1× seminggu atau sesuai protokol', 'Bowie-Dick test dilakukan setiap hari untuk autoklaf pre-vacuum', 'Alat tidak dikeluarkan dari autoklaf dalam keadaan basah', 'Kemasan yang keluar dengan CI yang tidak berubah warna ditandai dan TIDAK digunakan'] },
+                    { name: 'Penyimpanan dan Distribusi Alat Steril', items: ['Area penyimpanan steril: bersih, kering, suhu 18-24°C, kelembaban ≤ 70%', 'Alat steril disimpan ≥ 30 cm dari lantai, ≥ 50 cm dari langit-langit', 'Sistem FIFO diterapkan: alat exp lebih awal diletakkan di depan/atas', 'Alat yang kemasan rusak / basah / exp tidak digunakan dan dikembalikan untuk reproses', 'Distribusi menggunakan kontainer tertutup atau troli bersih tertutup'] }
+                ]
+            },
+            GIZI: {
+                title: 'Pelayanan Makanan & Higiene Dapur', type: 'CHECKLIST',
+                sections: [
+                    { name: 'Kebersihan Personal & APD', items: ['Petugas memakai penutup kepala (bouffant cap) yang menutupi seluruh rambut', 'Petugas memakai celemek / apron yang bersih', 'Petugas memakai sarung tangan saat menyajikan makanan matang', 'Petugas melakukan hand hygiene sebelum memulai pekerjaan dan setelah dari toilet', 'Petugas tidak memakai perhiasan (cincin, gelang) saat bekerja di dapur', 'Petugas dengan gejala saluran cerna/luka TIDAK bekerja menangani makanan hari ini'] },
+                    { name: 'Penerimaan dan Penyimpanan', items: ['Bahan mentah dan bahan matang disimpan terpisah (rak/area berbeda)', 'Bahan makanan tidak menyentuh lantai — disimpan di rak minimal 30 cm dari lantai', 'Sistem FIFO (First In First Out) diterapkan pada semua bahan makanan', 'Lemari pendingin / chiller berfungsi dengan baik (suhu ≤ 5°C)', 'Freezer berfungsi (suhu ≤ −18°C)', 'Suhu lemari pendingin dan freezer dicatat 2× sehari dalam form pemantauan', 'Bahan makanan disimpan dalam wadah tertutup berlabel (nama bahan, tanggal masuk)'] },
+                    { name: 'Persiapan dan Pengolahan', items: ['Talenan dan pisau berbeda digunakan untuk bahan mentah dan bahan matang', 'Proses pencairan (thawing) dilakukan di lemari pendingin atau microwave — TIDAK di suhu ruang', 'Suhu internal makanan matang tercapai sesuai standar (daging/unggas ≥ 74°C)', 'Makanan panas dipertahankan pada suhu ≥ 60°C hingga saat penyajian', 'Makanan tidak dibiarkan pada suhu ruang lebih dari 2 jam', 'Air yang digunakan untuk memasak / mencuci bahan bersumber dari air yang aman'] },
+                    { name: 'Alat Masak dan Alat Makan', items: ['Peralatan masak dibersihkan segera setelah digunakan', 'Alat makan dicuci: cuci sabun → bilas → sanitasi suhu ≥ 77°C atau disinfektan', 'Alat makan kering sempurna sebelum disimpan — tidak disimpan dalam kondisi basah', 'Nampan makanan pasien dibersihkan dan didisinfeksi setelah setiap penggunaan', 'Lap dapur dibedakan: untuk peralatan, untuk permukaan meja, dan untuk tangan'] },
+                    { name: 'Kebersihan Area Dapur', items: ['Permukaan meja kerja (counter) bersih dan didisinfeksi sebelum dan setelah persiapan', 'Hood / exhaustan di atas kompor berfungsi dan bersih dari kerak lemak', 'Wastafel cuci tangan tersedia di dapur — terpisah dari wastafel cuci alat', 'Tempat sampah organik dapur tertutup dan dikosongkan minimal 2× sehari', 'Pest control dilaksanakan sesuai jadwal — tidak ada tanda infestasi hama aktif'] },
+                    { name: 'Penyajian dan Distribusi', items: ['Label nampan makanan mencantumkan: nama pasien, NRM, ruangan, jenis diet', 'Makanan panas disajikan dalam wadah tertutup dan troli tertutup', 'Suhu makanan dipertahankan selama distribusi', 'Diet khusus ditandai dan dibedakan dengan sistem kode yang jelas', 'Sisa makanan pasien rawat inap diperlakukan sebagai limbah infeksius'] }
+                ]
+            },
+            JENAZAH: {
+                title: 'Pemulasaraan Jenazah', type: 'CHECKLIST',
+                sections: [
+                    { name: 'Fasilitas dan Infrastruktur', items: ['Ruang jenazah terpisah dari area perawatan pasien dan memiliki pintu masuk tersendiri', 'Ruang jenazah dilengkapi exhaust fan / sistem ventilasi yang memadai', 'Lantai dan dinding kedap air, mudah dibersihkan, dan tidak berpori', 'Tersedia wastafel dengan air mengalir dan sabun / handrub di dalam ruang', 'Tersedia meja pemulasaraan yang dapat dengan mudah dibersihkan dan didisinfeksi', 'Tersedia wadah limbah infeksius (kuning) dan safety box di dalam ruangan'] },
+                    { name: 'APD dan Keselamatan Petugas', items: ['Petugas memakai APD lengkap untuk jenazah infeksius: gaun kedap, sarung tangan tebal, masker, pelindung mata, apron, sepatu boot', 'Petugas melakukan hand hygiene sebelum memakai APD dan setelah melepas APD', 'Petugas mengetahui prosedur penanganan bila tertusuk benda tajam', 'Jumlah petugas yang masuk ruang jenazah dibatasi sesuai kebutuhan'] },
+                    { name: 'Identifikasi dan Penandaan', items: ['Setiap jenazah diberi label identitas yang kuat dan tahan air', 'Label tambahan bertuliskan "JENAZAH INFEKSIUS" dipasang untuk pasien penyakit menular', 'Rekam medis jenazah yang mencantumkan diagnosis tersedia sebelum penyerahan'] },
+                    { name: 'Prosedur Jenazah Infeksius', items: ['Jenazah pasien dengan penyakit menular diperlakukan sebagai jenazah infeksius', 'Pemulasaraan HANYA dilakukan oleh petugas terlatih dan tidak langsung disentuh keluarga tanpa APD', 'Luka / lubang tubuh jenazah infeksius ditutup / disegel', 'Jenazah infeksius langsung dimasukkan ke kantong jenazah berlapis ganda (double body bag)'] },
+                    { name: 'Kantong Jenazah & Pengiriman', items: ['Kantong jenazah yang digunakan tidak bocor dan dapat ditutup rapat', 'Label identitas + label infeksius terpasang di bagian LUAR kantong jenazah', 'Jenazah diangkut menggunakan brankar / troli yang dapat dibersihkan dan didisinfeksi', 'Mobil jenazah dibersihkan dan didisinfeksi setelah penggunaan'] },
+                    { name: 'Kebersihan Ruang Jenazah', items: ['Meja pemulasaraan dibersihkan & didisinfeksi dengan klorin 0.5% setelah selesai penanganan', 'Seluruh limbah yang dihasilkan selama pemulasaraan dibuang ke kantong limbah infeksius kuning', 'Limbah benda tajam dibuang ke safety box'] }
+                ]
             }
+        };
+
+        const calculateCompliance = (answers) => {
+            const keys = Object.keys(answers).filter(k => answers[k] === 'Y' || answers[k] === 'T');
+            if (keys.length === 0) return 0;
+            return Math.round((keys.filter(k => answers[k] === 'Y').length / keys.length) * 100);
         };
 
         function HAIsApp() {
             const [currentUser, setCurrentUser] = useState(null);
             const [activeTab, setActiveTab] = useState('dashboard');
+            const [editPayload, setEditPayload] = useState(null);
             
             const [users, setUsers, deleteUser] = useAppDatabase('users', DEFAULT_USERS);
             const [masterUnits, setMasterUnits, deleteUnit] = useAppDatabase('units', DEFAULT_UNITS);
             const [dbAudits, setDbAudits] = useAppDatabase('audits', []);
             const [dbSurveilans, setDbSurveilans] = useAppDatabase('surveilans', []);
             const [dbDenominators, setDbDenominators] = useAppDatabase('denominators', []);
+            const [dbKewaspadaan, setDbKewaspadaan] = useAppDatabase('kewaspadaan', []);
 
             const handleLogout = () => {
                 setCurrentUser(null);
                 setActiveTab('dashboard');
+                setEditPayload(null);
             };
 
             if (!currentUser) {
@@ -229,11 +277,33 @@
             const navItems = [
                 { id: 'dashboard', label: 'Dashboard Mutu', icon: 'fa-table-columns', roles: ['IPCLN', 'IPCN', 'MANAJEMEN'] },
                 { id: 'audit', label: 'Audit Bundle', icon: 'fa-clipboard-check', roles: ['IPCLN', 'IPCN'] },
+                { id: 'kewaspadaan', label: 'Audit Kewaspadaan', icon: 'fa-list-check', roles: ['IPCLN', 'IPCN'] },
                 { id: 'surveilans', label: 'Surveilans HAIs', icon: 'fa-chart-line', roles: ['IPCLN', 'IPCN'] },
                 { id: 'denominator', label: 'Denominator', icon: 'fa-database', roles: ['IPCLN', 'IPCN'] },
                 { id: 'verifikasi', label: 'Verifikasi Data', icon: 'fa-shield-halved', roles: ['IPCN'] },
+                { id: 'riwayat', label: 'Riwayat Data', icon: 'fa-clock-rotate-left', roles: ['IPCN', 'MANAJEMEN'] },
                 { id: 'master', label: 'Data Master / User', icon: 'fa-gear', roles: ['IPCN'] },
             ];
+
+            const pendingCount = dbAudits.filter(a => a.status === 'DRAFT').length + 
+                                 dbSurveilans.filter(s => s.status === 'DRAFT').length + 
+                                 dbKewaspadaan.filter(k => k.status === 'DRAFT').length;
+
+            const handleSaveData = (collection, setCollection, data) => {
+                const exists = collection.find(item => item.id === data.id);
+                if (exists) {
+                    setCollection(collection.map(item => item.id === data.id ? data : item));
+                } else {
+                    setCollection([...collection, data]);
+                }
+                setEditPayload(null);
+                if(editPayload) setActiveTab('riwayat');
+            };
+
+            const handleEdit = (tab, payload) => {
+                setEditPayload(payload);
+                setActiveTab(tab);
+            };
 
             return (
                 <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
@@ -262,18 +332,18 @@
                         </div>
                     </header>
 
-                    <div className="bg-white border-b border-slate-200 shadow-sm sticky top-16 z-40 overflow-x-auto">
+                    <div className="bg-white border-b border-slate-200 shadow-sm sticky top-16 z-40 overflow-x-auto custom-scrollbar">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 py-2">
                             {navItems.filter(item => item.roles.includes(currentUser.role)).map(item => (
-                                <button key={item.id} onClick={() => setActiveTab(item.id)}
+                                <button key={item.id} onClick={() => {setActiveTab(item.id); setEditPayload(null);}}
                                     className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                                         activeTab === item.id ? 'bg-teal-50 text-teal-700 shadow-sm ring-1 ring-teal-600/20' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                                     }`}>
                                     <i className={`fa-solid ${item.icon} mr-2 ${activeTab === item.id ? 'text-teal-600' : 'text-slate-400'}`}></i>
                                     {item.label}
-                                    {item.id === 'verifikasi' && (dbAudits.filter(a => a.status === 'DRAFT').length + dbSurveilans.filter(s => s.status === 'DRAFT').length > 0) && (
+                                    {item.id === 'verifikasi' && pendingCount > 0 && (
                                         <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
-                                            {dbAudits.filter(a => a.status === 'DRAFT').length + dbSurveilans.filter(s => s.status === 'DRAFT').length}
+                                            {pendingCount}
                                         </span>
                                     )}
                                 </button>
@@ -281,12 +351,14 @@
                         </div>
                     </div>
 
-                    <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                        {activeTab === 'dashboard' && <DashboardModule audits={dbAudits} surveilans={dbSurveilans} denominators={dbDenominators} units={unitNames} />}
-                        {activeTab === 'audit' && <AuditModule onSave={(data) => setDbAudits([...dbAudits, data])} user={currentUser} masterUnits={unitNames} />}
-                        {activeTab === 'surveilans' && <SurveilansModule onSave={(data) => setDbSurveilans([...dbSurveilans, data])} user={currentUser} masterUnits={unitNames} />}
-                        {activeTab === 'denominator' && <DenominatorModule denominators={dbDenominators} setDenominators={setDbDenominators} user={currentUser} masterUnits={unitNames} />}
-                        {activeTab === 'verifikasi' && <VerifikasiModule audits={dbAudits} surveilans={dbSurveilans} setAudits={setDbAudits} setSurveilans={setDbSurveilans} />}
+                    <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+                        {activeTab === 'dashboard' && <DashboardModule audits={dbAudits} surveilans={dbSurveilans} denominators={dbDenominators} kewaspadaan={dbKewaspadaan} units={unitNames} />}
+                        {activeTab === 'audit' && <AuditModule onSave={(data) => handleSaveData(dbAudits, setDbAudits, data)} user={currentUser} masterUnits={unitNames} editPayload={editPayload} />}
+                        {activeTab === 'kewaspadaan' && <AuditKewaspadaanModule onSave={(data) => handleSaveData(dbKewaspadaan, setDbKewaspadaan, data)} user={currentUser} masterUnits={unitNames} editPayload={editPayload} />}
+                        {activeTab === 'surveilans' && <SurveilansModule onSave={(data) => handleSaveData(dbSurveilans, setDbSurveilans, data)} user={currentUser} masterUnits={unitNames} editPayload={editPayload} />}
+                        {activeTab === 'denominator' && <DenominatorModule denominators={dbDenominators} setDenominators={setDbDenominators} user={currentUser} masterUnits={unitNames} editPayload={editPayload} clearEdit={() => {setEditPayload(null); setActiveTab('riwayat');}} />}
+                        {activeTab === 'verifikasi' && <VerifikasiModule audits={dbAudits} surveilans={dbSurveilans} kewaspadaan={dbKewaspadaan} setAudits={setDbAudits} setSurveilans={setDbSurveilans} setKewaspadaan={setDbKewaspadaan} />}
+                        {activeTab === 'riwayat' && <RiwayatModule audits={dbAudits} surveilans={dbSurveilans} kewaspadaan={dbKewaspadaan} denominators={dbDenominators} setAudits={setDbAudits} setSurveilans={setDbSurveilans} setKewaspadaan={setDbKewaspadaan} setDenominators={setDbDenominators} onEdit={handleEdit} />}
                         {activeTab === 'master' && <MasterDataModule units={masterUnits} setUnits={setMasterUnits} deleteUnit={deleteUnit} users={users} setUsers={setUsers} deleteUser={deleteUser} />}
                     </main>
                 </div>
@@ -367,191 +439,502 @@
             );
         }
 
-        function MasterDataModule({ units, setUnits, deleteUnit, users, setUsers, deleteUser }) {
-            const [activeTab, setActiveTab] = useState('users');
-            const [uName, setUName] = useState('');
-            const [uRole, setURole] = useState('IPCLN');
-            const [uUnit, setUUnit] = useState('');
-            const [uPass, setUPass] = useState('');
-            const [newUnit, setNewUnit] = useState('');
-            const [editUserId, setEditUserId] = useState(null);
+        function DashboardModule({ audits, surveilans, denominators, kewaspadaan, units }) {
+            const [filterMonth, setFilterMonth] = useState(new Date().toISOString().slice(0,7)); 
+            const [filterUnit, setFilterUnit] = useState('ALL');
 
-            const handleAddUser = (e) => {
-                e.preventDefault();
-                if(uName && uPass) {
-                    if (editUserId) {
-                        setUsers(users.map(u => u.id === editUserId ? { ...u, name: uName, role: uRole, unit: uRole === 'IPCLN' ? uUnit : 'ALL', password: uPass } : u));
-                        setEditUserId(null);
+            const { rateData, kewasChartData, bundleChartData, kpi } = useMemo(() => {
+                const vSurv = surveilans.filter(s => s.status === 'VERIFIED' && s.metadata.bulan === filterMonth && (filterUnit === 'ALL' || s.metadata.unit === filterUnit));
+                const vAud = audits.filter(a => a.status === 'VERIFIED' && a.metadata.tanggal.startsWith(filterMonth) && (filterUnit === 'ALL' || a.metadata.unit === filterUnit));
+                
+                let den = { hr:0, kat:0, cvc:0, vent:0, iv:0, op:0 };
+                denominators.filter(d => d.bulan === filterMonth && (filterUnit === 'ALL' || d.unit === filterUnit)).forEach(d => {
+                    den.hr += d.hariRawat; den.kat += d.hariKateter; den.cvc += d.hariCVC; den.vent += d.hariVentilator; den.iv += d.hariIVLine; den.op += d.jumlahOperasi;
+                });
+
+                let c = { isk:0, iadp:0, vap:0, pleb:0, ido:0 };
+                vSurv.forEach(s => { c.isk += s.data.ISK.length; c.iadp += s.data.IADP.length; c.vap += s.data.VAP.length; c.pleb += s.data.PLEBITIS.length; c.ido += s.data.IDO.length; });
+
+                const rData = [
+                    { name: 'ISK (‰)', rate: den.kat>0 ? Number(((c.isk/den.kat)*1000).toFixed(2)) : 0, target: TARGETS.ISK, case: c.isk, dn: den.kat },
+                    { name: 'IADP (‰)', rate: den.cvc>0 ? Number(((c.iadp/den.cvc)*1000).toFixed(2)) : 0, target: TARGETS.IADP, case: c.iadp, dn: den.cvc },
+                    { name: 'VAP (‰)', rate: den.vent>0 ? Number(((c.vap/den.vent)*1000).toFixed(2)) : 0, target: TARGETS.VAP, case: c.vap, dn: den.vent },
+                    { name: 'Plebitis (‰)', rate: den.iv>0 ? Number(((c.pleb/den.iv)*1000).toFixed(2)) : 0, target: TARGETS.PLEBITIS, case: c.pleb, dn: den.iv },
+                    { name: 'IDO (%)', rate: den.op>0 ? Number(((c.ido/den.op)*100).toFixed(2)) : 0, target: TARGETS.IDO, case: c.ido, dn: den.op },
+                ];
+
+                // Bundle calculations
+                let bundleBreakdown = { CAUTI: { y: 0, t: 0 }, CLABSI: { y: 0, t: 0 }, VAP: { y: 0, t: 0 }, IDO: { y: 0, t: 0 } };
+                let tComp=0, cntAud=0;
+                
+                const processA = (arr, type) => arr.forEach(r => { 
+                    const keys = Object.keys(r.answers).filter(k => r.answers[k] === 'Y' || r.answers[k] === 'T');
+                    if(keys.length > 0){ 
+                        let score = Math.round((keys.filter(k => r.answers[k] === 'Y').length / keys.length) * 100);
+                        tComp += score; 
+                        cntAud++; 
+                        keys.forEach(k => {
+                            if(r.answers[k] === 'Y') bundleBreakdown[type].y++;
+                            if(r.answers[k] === 'T') bundleBreakdown[type].t++;
+                        });
+                    } 
+                });
+                
+                vAud.forEach(a => { 
+                    processA(a.data.CAUTI||[], 'CAUTI'); 
+                    processA(a.data.CLABSI||[], 'CLABSI'); 
+                    processA(a.data.VAP||[], 'VAP'); 
+                    processA(a.data.IDO||[], 'IDO'); 
+                });
+
+                const bChartData = Object.keys(bundleBreakdown).map(k => {
+                    const total = bundleBreakdown[k].y + bundleBreakdown[k].t;
+                    return { name: k, kepatuhan: total > 0 ? Math.round((bundleBreakdown[k].y / total) * 100) : 0 };
+                });
+
+                // Kewaspadaan calculations
+                const vKewas = kewaspadaan ? kewaspadaan.filter(k => k.status === 'VERIFIED' && k.metadata.tanggal.startsWith(filterMonth) && (filterUnit === 'ALL' || k.metadata.unit === filterUnit)) : [];
+                let tKewasY = 0, tKewasTotal = 0;
+                let kewasBreakdown = {};
+
+                vKewas.forEach(k => {
+                    let y = 0, t = 0;
+                    if (k.auditType === 'HH') {
+                        k.data.forEach(r => {
+                            ['m1','m2','m3','m4','m5'].forEach(m => { if (r[m] === 'Y') y++; if (r[m] === 'T') t++; });
+                        });
                     } else {
-                        setUsers([...users, { id: Date.now(), name: uName, role: uRole, unit: uRole === 'IPCLN' ? uUnit : 'ALL', password: uPass }]);
+                        Object.values(k.data).forEach(ans => { if (ans === 'Y') y++; if (ans === 'T') t++; });
                     }
-                    setUName(''); setUPass(''); setUUnit(''); setURole('IPCLN');
-                }
-            };
+                    
+                    tKewasY += y; tKewasTotal += (y + t);
+                    if(!kewasBreakdown[k.auditType]) kewasBreakdown[k.auditType] = {y:0, t:0, name: KEWASPADAAN_CONFIG[k.auditType]?.title || k.auditType};
+                    kewasBreakdown[k.auditType].y += y;
+                    kewasBreakdown[k.auditType].t += t;
+                });
 
-            const handleEditClick = (user) => {
-                setEditUserId(user.id);
-                setUName(user.name);
-                setURole(user.role);
-                setUUnit(user.unit === 'ALL' ? '' : user.unit);
-                setUPass(user.password);
-            };
+                const kwChartData = Object.values(kewasBreakdown).map(v => ({
+                    name: v.name.substring(0, 15) + (v.name.length > 15 ? '...' : ''), 
+                    full_name: v.name,
+                    kepatuhan: (v.y + v.t) > 0 ? Math.round((v.y / (v.y + v.t)) * 100) : 0
+                }));
 
-            const handleCancelEdit = () => {
-                setEditUserId(null);
-                setUName(''); setUPass(''); setUUnit(''); setURole('IPCLN');
-            };
-
-            const handleAddUnit = (e) => {
-                e.preventDefault();
-                if (newUnit.trim()) {
-                    setUnits([...units, { id: Date.now(), name: newUnit.trim() }]);
-                    setNewUnit('');
-                }
-            };
+                return { 
+                    rateData: rData, 
+                    kewasChartData: kwChartData, 
+                    bundleChartData: bChartData,
+                    kpi: { 
+                        cases: c.isk+c.iadp+c.vap+c.pleb+c.ido, 
+                        avgComp: cntAud>0 ? Math.round(tComp/cntAud) : 0, 
+                        avgKewas: tKewasTotal>0 ? Math.round((tKewasY/tKewasTotal)*100) : 0,
+                        noDen: (den.kat+den.cvc+den.vent+den.iv+den.op === 0) 
+                    } 
+                };
+            }, [audits, surveilans, denominators, kewaspadaan, filterMonth, filterUnit]);
 
             return (
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
-                        <i className="fa-solid fa-gear text-teal-600 mr-2"></i> Manajemen Master Data & Hak Akses
-                    </h2>
-                    <div className="border-b border-slate-200 mb-6">
-                        <div className="flex space-x-6">
-                            <button onClick={() => setActiveTab('users')} className={`pb-3 font-medium text-sm transition ${activeTab==='users' ? 'border-b-2 border-teal-500 text-teal-600' : 'text-slate-500'}`}>Manajemen User</button>
-                            <button onClick={() => setActiveTab('units')} className={`pb-3 font-medium text-sm transition ${activeTab==='units' ? 'border-b-2 border-teal-500 text-teal-600' : 'text-slate-500'}`}>Manajemen Unit / Ruangan</button>
+                <div className="space-y-6">
+                    <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-800">Dashboard Mutu PPI</h2>
+                            <p className="text-sm text-slate-500">Analisis Komprehensif Insidence Rate HAIs & Kepatuhan Audit (Bundle + Kewaspadaan).</p>
+                        </div>
+                        <div className="flex space-x-2 bg-white p-1 rounded-lg border shadow-sm items-center h-fit">
+                            <i className="fa-solid fa-filter text-slate-400 ml-2"></i>
+                            <input type="month" value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} className="border-none bg-slate-50 px-2 py-1 rounded text-sm font-bold outline-none text-slate-700" />
+                            <select value={filterUnit} onChange={e=>setFilterUnit(e.target.value)} className="border-none bg-slate-50 px-2 py-1 rounded text-sm font-bold outline-none text-slate-700">
+                                <option value="ALL">Semua Unit</option>
+                                {units.map(u => <option key={u} value={u}>{u}</option>)}
+                            </select>
                         </div>
                     </div>
-                    {activeTab === 'users' && (
-                        <div className="grid md:grid-cols-3 gap-8">
-                            <div className="md:col-span-1 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                <h3 className="text-sm font-bold text-slate-700 mb-4">{editUserId ? 'Edit Pengguna' : 'Tambah Pengguna Baru'}</h3>
-                                <form onSubmit={handleAddUser} className="space-y-3">
-                                    <div><label className="text-xs font-semibold">Nama Lengkap</label><input type="text" required value={uName} onChange={e=>setUName(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none focus:border-teal-500" /></div>
-                                    <div><label className="text-xs font-semibold">Role Akses</label>
-                                        <select value={uRole} onChange={e=>{setURole(e.target.value); if(e.target.value!=='IPCLN') setUUnit('ALL');}} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none bg-white">
-                                            <option value="IPCLN">IPCLN (Perawat Ruangan)</option><option value="IPCN">IPCN (Komite PPI)</option><option value="MANAJEMEN">MANAJEMEN (Direksi)</option>
-                                        </select>
-                                    </div>
-                                    {uRole === 'IPCLN' && <div><label className="text-xs font-semibold">Penempatan Unit</label>
-                                        <select value={uUnit} required onChange={e=>setUUnit(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none bg-white">
-                                            <option value="">Pilih Unit...</option>
-                                            {units.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
-                                        </select>
-                                    </div>}
-                                    <div><label className="text-xs font-semibold">Password</label><input type="text" required value={uPass} onChange={e=>setUPass(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none focus:border-teal-500" /></div>
-                                    <div className="flex space-x-2 mt-2">
-                                        <button type="submit" className="flex-1 bg-teal-600 text-white font-bold py-2 rounded text-sm hover:bg-teal-700 transition"><i className={`fa-solid ${editUserId ? 'fa-save' : 'fa-plus'} mr-1`}></i> {editUserId ? 'Simpan' : 'Tambah'}</button>
-                                        {editUserId && <button type="button" onClick={handleCancelEdit} className="flex-1 bg-slate-300 text-slate-700 font-bold py-2 rounded text-sm hover:bg-slate-400 transition"><i className="fa-solid fa-times mr-1"></i> Batal</button>}
-                                    </div>
-                                </form>
-                            </div>
-                            <div className="md:col-span-2 overflow-x-auto">
-                                <table className="w-full text-sm text-left border-collapse border border-slate-200 rounded-lg">
-                                    <thead className="bg-slate-50 text-slate-600 border-b"><tr><th className="p-3">Nama</th><th className="p-3">Role</th><th className="p-3">Unit</th><th className="p-3">Password</th><th className="p-3 text-center">Aksi</th></tr></thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {users.map(u => (
-                                            <tr key={u.id} className="hover:bg-slate-50">
-                                                <td className="p-3 font-medium">{u.name}</td><td className="p-3"><span className="bg-slate-200 px-2 py-1 rounded text-xs">{u.role}</span></td>
-                                                <td className="p-3">{u.unit}</td><td className="p-3 text-slate-400">••••{u.password.slice(-2)}</td>
-                                                <td className="p-3 text-center space-x-2">
-                                                    <button onClick={() => handleEditClick(u)} className="text-blue-500 hover:bg-blue-50 p-1 rounded transition" title="Edit User"><i className="fa-solid fa-pen-to-square"></i></button>
-                                                    <button onClick={() => deleteUser(u.id, users.filter(x=>x.id!==u.id))} className="text-red-500 hover:bg-red-50 p-1 rounded transition" title="Hapus User"><i className="fa-solid fa-trash"></i></button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+
+                    {kpi.noDen && (
+                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start text-amber-800 shadow-sm animate-pulse">
+                            <i className="fa-solid fa-circle-exclamation text-xl mr-3 shrink-0 mt-0.5"></i>
+                            <div>
+                                <h4 className="font-bold text-sm">Peringatan: Data Denominator (Hari Alat) Periode Ini Belum Tersedia</h4>
+                                <p className="text-xs mt-1">Sistem mendeteksi bahwa total hari terpasang alat (pembagi) adalah 0 pada periode/unit yang dipilih. <b>Tingkat Insiden / Rate (‰) tidak dapat dihitung dengan benar jika nilai pembagi kosong.</b> Harap tugaskan IPCLN untuk menginput Denominator akhir bulan melalui menu Denominator.</p>
                             </div>
                         </div>
                     )}
-                    {activeTab === 'units' && (
-                        <div className="max-w-md">
-                            <form onSubmit={handleAddUnit} className="flex space-x-2 mb-6">
-                                <input type="text" required value={newUnit} onChange={e=>setNewUnit(e.target.value)} placeholder="Nama Unit (Mis: IGD, NICU)..." className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-teal-500" />
-                                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700">Tambah</button>
-                            </form>
-                            <ul className="border border-slate-200 rounded-lg divide-y divide-slate-200">
-                                {units.map(u => (
-                                    <li key={u.id} className="flex justify-between items-center p-3 text-sm hover:bg-slate-50">
-                                        <span className="font-medium text-slate-700">{u.name}</span>
-                                        <button onClick={() => deleteUnit(u.id, units.filter(x=>x.id!==u.id))} className="text-red-500 hover:bg-red-50 p-1 rounded"><i className="fa-solid fa-trash"></i></button>
-                                    </li>
-                                ))}
-                            </ul>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
+                            <p className="text-xs font-bold text-slate-500 uppercase">Avg Kepatuhan Bundle</p>
+                            <h4 className={`text-2xl font-bold mt-1 ${kpi.avgComp >= 85 ? 'text-emerald-600' : 'text-red-600'}`}>{kpi.avgComp}%</h4>
                         </div>
-                    )}
+                        <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
+                            <p className="text-xs font-bold text-slate-500 uppercase">Avg Kepatuhan Kewaspadaan</p>
+                            <h4 className={`text-2xl font-bold mt-1 ${kpi.avgKewas >= 85 ? 'text-purple-600' : 'text-red-600'}`}>{kpi.avgKewas}%</h4>
+                        </div>
+                        <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
+                            <p className="text-xs font-bold text-slate-500 uppercase">Total Kasus Infeksi (HAIs)</p>
+                            <h4 className="text-2xl font-bold mt-1 text-rose-600">{kpi.cases} Kasus</h4>
+                        </div>
+                        <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
+                            <p className="text-xs font-bold text-slate-500 uppercase">Status Data</p>
+                            <h4 className={`text-lg font-bold mt-1 ${kpi.noDen ? 'text-amber-600' : 'text-blue-600'}`}>{kpi.noDen ? 'Incomplete' : 'Ready'}</h4>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-1">
+                            <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center">
+                                <i className="fa-solid fa-chart-line text-rose-600 mr-2"></i> Incidence Rate HAIs vs Target
+                            </h3>
+                            <div className="h-72 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <ComposedChart data={rateData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                        <XAxis dataKey="name" tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                                        <RechartsTooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px'}} formatter={(val, name, props) => { if(name==='Target Maks (RS)') return [val, 'Batas Target']; return [`${val} (Kasus: ${props.payload.case} | Hari Alat: ${props.payload.dn})`, 'Rate Insiden']; }} />
+                                        <Legend wrapperStyle={{fontSize: '11px', paddingTop: '10px'}} />
+                                        <Bar dataKey="rate" name="Rate Aktual" barSize={35} radius={[4, 4, 0, 0]}>
+                                            {rateData.map((e, i) => <Cell key={i} fill={e.rate > e.target ? '#ef4444' : '#14b8a6'} />)}
+                                        </Bar>
+                                        <Line type="step" dataKey="target" name="Target Maks (RS)" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                                    </ComposedChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                            <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center">
+                                <i className="fa-solid fa-clipboard-check text-blue-600 mr-2"></i> Kepatuhan Audit Bundle
+                            </h3>
+                            <div className="h-72 w-full">
+                                {bundleChartData.reduce((acc, curr) => acc + curr.kepatuhan, 0) === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                                        <i className="fa-regular fa-folder-open text-4xl mb-2"></i>
+                                        <p className="text-sm">Belum ada data audit bundle.</p>
+                                    </div>
+                                ) : (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <ComposedChart data={bundleChartData} margin={{ top: 10, right: 30, left: 0, bottom: 5 }} layout="vertical">
+                                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
+                                            <XAxis type="number" domain={[0, 100]} hide />
+                                            <YAxis dataKey="name" type="category" width={60} tick={{fontSize: 10, fill: '#64748b', fontWeight: 'bold'}} axisLine={false} tickLine={false} />
+                                            <RechartsTooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px'}} formatter={(val) => [`${val}%`, 'Kepatuhan']} />
+                                            <Bar dataKey="kepatuhan" barSize={20} radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#475569', fontSize: 11, formatter: (val) => `${val}%` }}>
+                                                {bundleChartData.map((e, i) => <Cell key={i} fill={e.kepatuhan >= 85 ? '#3b82f6' : '#ef4444'} />)}
+                                            </Bar>
+                                        </ComposedChart>
+                                    </ResponsiveContainer>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                            <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center">
+                                <i className="fa-solid fa-list-check text-purple-600 mr-2"></i> Kepatuhan Kewaspadaan Std
+                            </h3>
+                            <div className="h-72 w-full">
+                                {kewasChartData.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                                        <i className="fa-regular fa-folder-open text-4xl mb-2"></i>
+                                        <p className="text-sm">Belum ada data audit.</p>
+                                    </div>
+                                ) : (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <ComposedChart data={kewasChartData} margin={{ top: 10, right: 30, left: 0, bottom: 5 }} layout="vertical">
+                                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
+                                            <XAxis type="number" domain={[0, 100]} hide />
+                                            <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 10, fill: '#64748b', fontWeight: 'bold'}} axisLine={false} tickLine={false} />
+                                            <RechartsTooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px'}} formatter={(val, name, props) => [`${val}%`, props.payload.full_name]} />
+                                            <Bar dataKey="kepatuhan" name="Kepatuhan (%)" barSize={16} radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#475569', fontSize: 11, formatter: (val) => `${val}%` }}>
+                                                {kewasChartData.map((e, i) => <Cell key={i} fill={e.kepatuhan >= 85 ? '#8b5cf6' : '#f59e0b'} />)}
+                                            </Bar>
+                                        </ComposedChart>
+                                    </ResponsiveContainer>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             );
         }
 
-        function DenominatorModule({ denominators, setDenominators, user, masterUnits }) {
-            const [form, setForm] = useState({ bulan: new Date().toISOString().slice(0,7), unit: user.unit !== 'ALL' ? user.unit : '', hariRawat: '', hariKateter: '', hariCVC: '', hariVentilator: '', hariIVLine: '', jumlahOperasi: '' });
-            const [msg, setMsg] = useState({ text: '', type: '' });
-            const availableUnits = user.unit === 'ALL' ? masterUnits : [user.unit];
+        function AuditModule({ onSave, user, masterUnits, editPayload }) {
+            const [activeBundle, setActiveBundle] = useState('CAUTI');
+            const [bundleRows, setBundleRows] = useState({ CAUTI: [], CLABSI: [], VAP: [], IDO: [] });
+            const [metadata, setMetadata] = useState({ tanggal: new Date().toISOString().split('T')[0], unit: user.unit !== 'ALL' ? user.unit : '', auditor: user.name });
+            const [statusMsg, setStatusMsg] = useState(null);
+
+            useEffect(() => {
+                if (editPayload) {
+                    setMetadata(editPayload.metadata);
+                    setBundleRows(editPayload.data);
+                }
+            }, [editPayload]);
 
             const handleSave = () => {
-                if (!form.bulan || !form.unit) { 
-                    setMsg({text: 'Bulan dan Unit Wajib diisi!', type: 'error'}); 
-                    setTimeout(() => setMsg({text: '', type: ''}), 3000);
-                    return; 
+                if (!metadata.unit) {
+                    setStatusMsg({ type: 'error', text: 'Pilih Unit Terlebih Dahulu!' });
+                    setTimeout(() => setStatusMsg(null), 3000);
+                    return;
                 }
-                const payload = {
-                    ...form, id: Date.now(),
-                    hariRawat: Number(form.hariRawat)||0, hariKateter: Number(form.hariKateter)||0, 
-                    hariCVC: Number(form.hariCVC)||0, hariVentilator: Number(form.hariVentilator)||0, 
-                    hariIVLine: Number(form.hariIVLine)||0, jumlahOperasi: Number(form.jumlahOperasi)||0
-                };
-                
-                const filtered = denominators.filter(d => !(d.bulan === form.bulan && d.unit === form.unit));
-                setDenominators([...filtered, payload]);
-                
-                setMsg({text: 'Data Denominator Berhasil Disimpan!', type: 'success'});
-                setTimeout(() => setMsg({text: '', type: ''}), 3000);
+                onSave({ 
+                    id: editPayload ? editPayload.id : Date.now(), 
+                    status: editPayload ? editPayload.status : (user.role === 'IPCLN' ? 'DRAFT' : 'VERIFIED'), 
+                    metadata, data: bundleRows 
+                });
+                setBundleRows({ CAUTI: [], CLABSI: [], VAP: [], IDO: [] });
+                setStatusMsg({ type: 'success', text: user.role === 'IPCLN' && !editPayload ? 'Audit Dikirim sebagai Draft!' : 'Data Audit Berhasil Disimpan!' });
+                setTimeout(() => setStatusMsg(null), 3000);
             };
 
             return (
                 <div className="space-y-6">
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h2 className="text-lg font-bold text-slate-800 mb-2 flex items-center">
-                            <i className="fa-solid fa-database text-teal-600 mr-2"></i> Form Input Denominator 
-                        </h2>
-                        <p className="text-sm text-slate-500 mb-6">Wajib diisi setiap akhir bulan oleh IPCLN sebagai pembagi (denominator) dalam perhitungan Incidence Rate (‰).</p>
-                        
-                        {msg.text && (
-                            <div className={`mb-4 p-3 rounded-lg text-sm font-bold border ${msg.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-teal-50 text-teal-700 border-teal-200'}`}>
-                                {msg.text}
-                            </div>
-                        )}
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-5 rounded-lg border border-slate-100 mb-6">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Periode (Bulan/Tahun)</label>
-                                <input type="month" value={form.bulan} onChange={e => setForm({...form, bulan: e.target.value})} className="w-full border border-slate-300 rounded-md p-2 text-sm outline-none focus:ring-2 focus:ring-teal-500" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Unit Ruangan</label>
-                                <select value={form.unit} onChange={e => setForm({...form, unit: e.target.value})} disabled={user.unit !== 'ALL'} className="w-full border border-slate-300 rounded-md p-2 text-sm bg-white disabled:bg-slate-100 outline-none">
-                                    <option value="">Pilih Unit...</option>
-                                    {availableUnits.map(u => <option key={u} value={u}>{u}</option>)}
-                                </select>
-                            </div>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-lg font-bold text-slate-800 flex items-center"><i className="fa-solid fa-file-lines text-teal-600 mr-2"></i> Formulir Audit Kepatuhan Bundle</h2>
+                            {statusMsg && <span className={`text-sm px-3 py-1 rounded-full font-medium border ${statusMsg.type === 'success' ? 'text-green-600 bg-green-50 border-green-200' : 'text-red-600 bg-red-50 border-red-200'}`}>{statusMsg.text}</span>}
                         </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                            {[
-                                {k:'hariRawat', l:'Total Hari Rawat', c:'bg-slate-100'}, {k:'hariKateter', l:'Total Hari Kateter (ISK)', c:'bg-blue-50'},
-                                {k:'hariCVC', l:'Total Hari CVC (IADP)', c:'bg-indigo-50'}, {k:'hariVentilator', l:'Total Hari Ventilator (VAP)', c:'bg-purple-50'},
-                                {k:'hariIVLine', l:'Total Hari IV Line (Plebitis)', c:'bg-orange-50'}, {k:'jumlahOperasi', l:'Total Tindakan Op (IDO)', c:'bg-yellow-50'}
-                            ].map(item => (
-                                <div key={item.k} className={`p-4 rounded-lg border border-slate-200 ${item.c}`}>
-                                    <label className="block text-xs font-semibold text-slate-700 mb-2">{item.l}</label>
-                                    <input type="number" min="0" value={form[item.k]} onChange={e => setForm({...form, [item.k]: e.target.value})} className="w-full border border-slate-300 rounded-md p-2 text-lg font-bold text-center outline-none focus:ring-2 focus:ring-teal-500" placeholder="0" />
-                                </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Tgl Audit</label><input type="date" className="mt-1 w-full border border-slate-300 rounded p-2 text-sm outline-none bg-white" value={metadata.tanggal} onChange={(e) => setMetadata({...metadata, tanggal: e.target.value})} /></div>
+                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Unit</label><select className="mt-1 w-full border border-slate-300 rounded p-2 text-sm bg-white outline-none" value={metadata.unit} onChange={(e) => setMetadata({...metadata, unit: e.target.value})} disabled={user.unit!=='ALL'}><option value="">Pilih...</option>{(user.unit==='ALL'?masterUnits:[user.unit]).map(u => <option key={u} value={u}>{u}</option>)}</select></div>
+                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Auditor</label><input type="text" className="mt-1 w-full bg-slate-100 border border-slate-300 rounded p-2 text-sm" value={metadata.auditor} disabled /></div>
+                        </div>
+                        <div className="border-b border-slate-200 mb-4 flex space-x-2">
+                            {Object.keys(AUDIT_BUNDLES).map(k => (
+                                <button key={k} onClick={()=>setActiveBundle(k)} className={`pb-3 px-4 font-bold text-sm border-b-2 ${activeBundle===k ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>{k} {bundleRows[k].length>0 && `(${bundleRows[k].length})`}</button>
                             ))}
                         </div>
-                        <div className="flex justify-end">
-                            <button onClick={handleSave} className="flex items-center px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 shadow-md font-bold transition">
-                                <i className="fa-solid fa-floppy-disk mr-2"></i> Simpan Denominator
+                        <AuditTable config={AUDIT_BUNDLES[activeBundle]} rows={bundleRows[activeBundle]} setRows={(r) => setBundleRows({...bundleRows, [activeBundle]: r})} />
+                        <div className="mt-6 flex justify-end"><button onClick={handleSave} className={`flex items-center px-6 py-2 text-white rounded font-bold transition ${user.role === 'IPCLN' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-teal-600 hover:bg-teal-700'}`}><i className="fa-solid fa-floppy-disk mr-2"></i> {user.role === 'IPCLN' ? 'Kirim ke IPCN (Draft)' : 'Simpan Audit'}</button></div>
+                    </div>
+                </div>
+            );
+        }
+
+        function AuditTable({ config, rows, setRows }) {
+            const addRow = () => {
+                let r = { id: Date.now(), name: '', nrm: '', answers: {} };
+                config.columns.forEach(c => r.answers[c.key] = null);
+                setRows([...rows, r]);
+            };
+            const setAns = (id, k, v) => setRows(rows.map(r => r.id===id ? {...r, answers: {...r.answers, [k]: v}} : r));
+
+            return (
+                <div>
+                    <div className="overflow-x-auto border border-slate-200 rounded-lg min-h-[250px]">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-50">
+                                <tr>
+                                    <th className="p-3 w-48">Pasien</th>
+                                    {config.columns.map(c=>(
+                                        <th key={c.key} className="p-2 text-center text-xs font-bold relative group cursor-help">
+                                            <span className="border-b border-dotted border-slate-400">{c.label}</span>
+                                            <div className="hidden group-hover:block absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 p-3 bg-slate-800 text-white text-[11px] rounded shadow-lg z-50 font-normal text-left whitespace-normal leading-relaxed before:content-[''] before:absolute before:bottom-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-b-slate-800">
+                                                {c.desc}
+                                            </div>
+                                        </th>
+                                    ))}
+                                    <th className="p-2 text-center">%</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200 bg-white">
+                                {rows.length === 0 && (<tr><td colSpan={config.columns.length + 3} className="px-4 py-8 text-center text-slate-400 italic">Klik tombol "Tambah Pasien" untuk mulai observasi bundle.</td></tr>)}
+                                {rows.map((r,i) => (
+                                    <tr key={r.id}>
+                                        <td className="p-2"><input placeholder="Nama Pasien" value={r.name} onChange={e=>{let nr=[...rows];nr[i].name=e.target.value;setRows(nr)}} className="w-full text-xs border rounded p-1 mb-1 outline-none focus:border-teal-500"/><input placeholder="No. RM" value={r.nrm} onChange={e=>{let nr=[...rows];nr[i].nrm=e.target.value;setRows(nr)}} className="w-full text-xs border rounded p-1 bg-slate-50 outline-none focus:border-teal-500"/></td>
+                                        {config.columns.map(c => (
+                                            <td key={c.key} className="p-1 align-middle text-center">
+                                                <div className="flex justify-center space-x-1">
+                                                    <button onClick={()=>setAns(r.id,c.key,'Y')} className={`px-2 py-1 border rounded text-xs font-bold ${r.answers[c.key]==='Y'?'bg-green-500 text-white border-green-600':'bg-white text-slate-400'}`}>Y</button>
+                                                    <button onClick={()=>setAns(r.id,c.key,'T')} className={`px-2 py-1 border rounded text-xs font-bold ${r.answers[c.key]==='T'?'bg-red-500 text-white border-red-600':'bg-white text-slate-400'}`}>T</button>
+                                                    <button onClick={()=>setAns(r.id,c.key,'NA')} className={`text-[10px] px-1 ${r.answers[c.key]==='NA'?'font-bold text-slate-800 underline':'text-slate-400'}`}>N/A</button>
+                                                </div>
+                                            </td>
+                                        ))}
+                                        <td className="p-2 text-center font-bold text-slate-700 bg-slate-50">{calculateCompliance(r.answers)}%</td>
+                                        <td className="p-2 text-center"><button onClick={()=>setRows(rows.filter(x=>x.id!==r.id))} className="text-red-400"><i className="fa-solid fa-trash"></i></button></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <button onClick={addRow} className="mt-3 text-sm font-bold text-teal-700 bg-teal-50 px-3 py-2 rounded-lg flex items-center border border-teal-200 hover:bg-teal-100"><i className="fa-solid fa-plus mr-2"></i>Tambah Pasien</button>
+                </div>
+            );
+        }
+
+        function AuditKewaspadaanModule({ onSave, user, masterUnits, editPayload }) {
+            const [activeAudit, setActiveAudit] = useState('HH');
+            const [metadata, setMetadata] = useState({ tanggal: new Date().toISOString().split('T')[0], unit: user.unit !== 'ALL' ? user.unit : '', auditor: user.name });
+            const [statusMsg, setStatusMsg] = useState(null);
+            
+            const [hhRows, setHhRows] = useState([]);
+            const [checklistData, setChecklistData] = useState({});
+
+            useEffect(() => {
+                if (editPayload) {
+                    setMetadata(editPayload.metadata);
+                    setActiveAudit(editPayload.auditType);
+                    if (editPayload.auditType === 'HH') setHhRows(editPayload.data);
+                    else setChecklistData(editPayload.data);
+                }
+            }, [editPayload]);
+
+            const handleSave = () => {
+                if (!metadata.unit) {
+                    setStatusMsg({ type: 'error', text: 'Pilih Unit Terlebih Dahulu!' });
+                    setTimeout(() => setStatusMsg(null), 3000);
+                    return;
+                }
+                
+                let dataToSave = null;
+                const config = KEWASPADAAN_CONFIG[activeAudit];
+                
+                if (config.type === 'HH') {
+                    if (hhRows.length === 0) {
+                        setStatusMsg({ type: 'error', text: 'Belum ada data observasi!' });
+                        setTimeout(() => setStatusMsg(null), 3000);
+                        return;
+                    }
+                    dataToSave = hhRows;
+                } else {
+                    if (Object.keys(checklistData).length === 0) {
+                        setStatusMsg({ type: 'error', text: 'Belum ada data observasi!' });
+                        setTimeout(() => setStatusMsg(null), 3000);
+                        return;
+                    }
+                    dataToSave = checklistData;
+                }
+
+                onSave({ 
+                    id: editPayload ? editPayload.id : Date.now(), 
+                    status: editPayload ? editPayload.status : (user.role === 'IPCLN' ? 'DRAFT' : 'VERIFIED'), 
+                    auditType: activeAudit, metadata, data: dataToSave 
+                });
+                setHhRows([]);
+                setChecklistData({});
+                setStatusMsg({ type: 'success', text: user.role === 'IPCLN' ? 'Audit Dikirim sebagai Draft!' : 'Data Audit Tersimpan!' });
+                setTimeout(() => setStatusMsg(null), 3000);
+            };
+
+            const renderHH = () => {
+                const addRow = () => setHhRows([...hhRows, { id: Date.now(), profesi: '', m1: null, m2: null, m3: null, m4: null, m5: null, metode: '' }]);
+                const updateRow = (id, key, val) => setHhRows(hhRows.map(r => r.id === id ? { ...r, [key]: val } : r));
+                const removeRow = (id) => setHhRows(hhRows.filter(r => r.id !== id));
+                
+                return (
+                    <div className="mt-4">
+                        <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-slate-50">
+                                    <tr>
+                                        <th className="p-3 w-40">Profesi</th>
+                                        <th className="p-2 text-center text-xs font-bold" title="Sebelum Sentuh Pasien">M1</th>
+                                        <th className="p-2 text-center text-xs font-bold" title="Sebelum Tindakan Aseptik">M2</th>
+                                        <th className="p-2 text-center text-xs font-bold" title="Setelah Risiko Cairan">M3</th>
+                                        <th className="p-2 text-center text-xs font-bold" title="Setelah Sentuh Pasien">M4</th>
+                                        <th className="p-2 text-center text-xs font-bold" title="Setelah Sentuh Lingkungan">M5</th>
+                                        <th className="p-2 text-center text-xs font-bold">Metode</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-200 bg-white">
+                                    {hhRows.length === 0 && (<tr><td colSpan="8" className="px-4 py-8 text-center text-slate-400 italic">Klik tambah petugas untuk observasi Hand Hygiene.</td></tr>)}
+                                    {hhRows.map((r) => (
+                                        <tr key={r.id}>
+                                            <td className="p-2">
+                                                <select value={r.profesi} onChange={e=>updateRow(r.id, 'profesi', e.target.value)} className="w-full text-xs border rounded p-1.5 outline-none focus:border-teal-500 bg-white">
+                                                    <option value="">- Pilih Profesi -</option>
+                                                    <option value="Dokter">Dokter / DPJP</option>
+                                                    <option value="Perawat">Perawat / Bidan</option>
+                                                    <option value="Lainnya">Nakes Lainnya</option>
+                                                </select>
+                                            </td>
+                                            {['m1','m2','m3','m4','m5'].map(m => (
+                                                <td key={m} className="p-1 align-middle text-center">
+                                                    <div className="flex justify-center space-x-1">
+                                                        <button onClick={()=>updateRow(r.id, m, 'Y')} className={`px-2 py-1 border rounded text-xs font-bold ${r[m]==='Y'?'bg-green-500 text-white border-green-600':'bg-white text-slate-400'}`}>Y</button>
+                                                        <button onClick={()=>updateRow(r.id, m, 'T')} className={`px-2 py-1 border rounded text-xs font-bold ${r[m]==='T'?'bg-red-500 text-white border-red-600':'bg-white text-slate-400'}`}>T</button>
+                                                    </div>
+                                                </td>
+                                            ))}
+                                            <td className="p-2 align-middle text-center">
+                                                <select value={r.metode} onChange={e=>updateRow(r.id, 'metode', e.target.value)} className="w-full text-xs border rounded p-1.5 outline-none bg-white">
+                                                    <option value="">- HR/HW -</option>
+                                                    <option value="HR">Handrub</option>
+                                                    <option value="HW">Handwash</option>
+                                                </select>
+                                            </td>
+                                            <td className="p-2 text-center"><button onClick={()=>removeRow(r.id)} className="text-red-400"><i className="fa-solid fa-trash"></i></button></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <button onClick={addRow} className="mt-3 text-sm font-bold text-teal-700 bg-teal-50 px-3 py-2 rounded-lg flex items-center border border-teal-200 hover:bg-teal-100"><i className="fa-solid fa-plus mr-2"></i>Tambah Petugas</button>
+                    </div>
+                );
+            };
+
+            const renderChecklist = () => {
+                const config = KEWASPADAAN_CONFIG[activeAudit];
+                const setAns = (itemIndex, v) => setChecklistData({ ...checklistData, [itemIndex]: v });
+                let globalIndex = 0;
+
+                return (
+                    <div className="mt-4 space-y-6">
+                        {config.sections.map((sec, sIdx) => (
+                            <div key={sIdx} className="border border-slate-200 rounded-lg overflow-hidden">
+                                <div className="bg-slate-100 p-3 font-bold text-slate-700 text-sm border-b border-slate-200">{sec.name}</div>
+                                <ul className="divide-y divide-slate-100 bg-white">
+                                    {sec.items.map((item) => {
+                                        const idx = globalIndex++;
+                                        return (
+                                            <li key={idx} className="p-3 flex flex-col md:flex-row md:items-center justify-between hover:bg-slate-50 transition">
+                                                <span className="text-sm text-slate-700 mb-2 md:mb-0 md:mr-4 flex-1">{item}</span>
+                                                <div className="flex space-x-2 shrink-0">
+                                                    <button onClick={()=>setAns(idx, 'Y')} className={`px-3 py-1.5 border rounded text-xs font-bold ${checklistData[idx]==='Y'?'bg-green-500 text-white border-green-600':'bg-white text-slate-400 hover:bg-slate-50'}`}>Ya</button>
+                                                    <button onClick={()=>setAns(idx, 'T')} className={`px-3 py-1.5 border rounded text-xs font-bold ${checklistData[idx]==='T'?'bg-red-500 text-white border-red-600':'bg-white text-slate-400 hover:bg-slate-50'}`}>Tidak</button>
+                                                    <button onClick={()=>setAns(idx, 'NA')} className={`px-3 py-1.5 border rounded text-xs font-bold ${checklistData[idx]==='NA'?'bg-slate-500 text-white border-slate-600':'bg-white text-slate-400 hover:bg-slate-50'}`}>N/A</button>
+                                                </div>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-lg font-bold text-slate-800 flex items-center"><i className="fa-solid fa-list-check text-teal-600 mr-2"></i> Audit Kewaspadaan Standar</h2>
+                            {statusMsg && <span className={`text-sm px-3 py-1 rounded-full font-medium border ${statusMsg.type === 'success' ? 'text-green-600 bg-green-50 border-green-200' : 'text-red-600 bg-red-50 border-red-200'}`}>{statusMsg.text}</span>}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Tgl Audit</label><input type="date" className="mt-1 w-full border border-slate-300 rounded p-2 text-sm outline-none bg-white" value={metadata.tanggal} onChange={(e) => setMetadata({...metadata, tanggal: e.target.value})} /></div>
+                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Unit</label><select className="mt-1 w-full border border-slate-300 rounded p-2 text-sm bg-white outline-none" value={metadata.unit} onChange={(e) => setMetadata({...metadata, unit: e.target.value})} disabled={user.unit!=='ALL'}><option value="">Pilih...</option>{(user.unit==='ALL'?masterUnits:[user.unit]).map(u => <option key={u} value={u}>{u}</option>)}</select></div>
+                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Auditor</label><input type="text" className="mt-1 w-full bg-slate-100 border border-slate-300 rounded p-2 text-sm" value={metadata.auditor} disabled /></div>
+                        </div>
+                        
+                        <div className="mb-4">
+                            <label className="block text-sm font-bold text-slate-700 mb-2">Kategori Kewaspadaan Standar:</label>
+                            <div className="flex flex-wrap gap-2">
+                                {Object.keys(KEWASPADAAN_CONFIG).map(k => (
+                                    <button key={k} onClick={()=>{setActiveAudit(k); setHhRows([]); setChecklistData({});}} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${activeAudit === k ? 'bg-purple-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                                        {KEWASPADAAN_CONFIG[k].title}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {KEWASPADAAN_CONFIG[activeAudit].type === 'HH' ? renderHH() : renderChecklist()}
+
+                        <div className="mt-6 pt-4 border-t border-slate-200 flex justify-end">
+                            <button onClick={handleSave} className={`flex items-center px-6 py-2 text-white rounded-lg font-bold transition ${user.role === 'IPCLN' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-teal-600 hover:bg-teal-700'}`}>
+                                <i className="fa-solid fa-floppy-disk mr-2"></i> {user.role === 'IPCLN' ? 'Kirim ke IPCN (Draft)' : 'Simpan Audit'}
                             </button>
                         </div>
                     </div>
@@ -559,7 +942,7 @@
             );
         }
 
-        function SurveilansModule({ onSave, user, masterUnits }) {
+        function SurveilansModule({ onSave, user, masterUnits, editPayload }) {
             const [activeType, setActiveType] = useState('ISK');
             const [saveStatus, setSaveStatus] = useState({ status: false, msg: ''});
             const SURV_TYPES = Object.keys(SURVEILANS_CONFIG);
@@ -571,6 +954,14 @@
             });
 
             const [survData, setSurvData] = useState({ IDO: [], ISK: [], IADP: [], VAP: [], PLEBITIS: [] });
+            
+            useEffect(() => {
+                if (editPayload) {
+                    setMetadata(editPayload.metadata);
+                    setSurvData(editPayload.data);
+                }
+            }, [editPayload]);
+
             const handleDataChange = (type, newRows) => setSurvData(prev => ({ ...prev, [type]: newRows }));
 
             const availableUnits = user.unit === 'ALL' ? masterUnits : [user.unit];
@@ -582,12 +973,13 @@
                     return;
                 }
                 const payload = {
-                    id: Date.now(), status: user.role === 'IPCLN' ? 'DRAFT' : 'VERIFIED',
+                    id: editPayload ? editPayload.id : Date.now(), 
+                    status: editPayload ? editPayload.status : (user.role === 'IPCLN' ? 'DRAFT' : 'VERIFIED'),
                     metadata, data: survData
                 };
                 onSave(payload);
                 setSurvData({ IDO: [], ISK: [], IADP: [], VAP: [], PLEBITIS: [] });
-                setSaveStatus({status: 'success', msg: user.role === 'IPCLN' ? 'Draft Berhasil Dikirim ke IPCN!' : 'Data Surveilans Tersimpan!'});
+                setSaveStatus({status: 'success', msg: user.role === 'IPCLN' && !editPayload ? 'Draft Berhasil Dikirim ke IPCN!' : 'Data Surveilans Tersimpan!'});
                 setTimeout(() => setSaveStatus({status:false}), 3000);
             };
 
@@ -696,119 +1088,226 @@
             );
         }
 
-        const calculateCompliance = (answers) => {
-            const keys = Object.keys(answers).filter(k => answers[k] === 'Y' || answers[k] === 'T');
-            if (keys.length === 0) return 0;
-            return Math.round((keys.filter(k => answers[k] === 'Y').length / keys.length) * 100);
-        };
+        function DenominatorModule({ denominators, setDenominators, user, masterUnits, editPayload, clearEdit }) {
+            const [form, setForm] = useState({ bulan: new Date().toISOString().slice(0,7), unit: user.unit !== 'ALL' ? user.unit : '', hariRawat: '', hariKateter: '', hariCVC: '', hariVentilator: '', hariIVLine: '', jumlahOperasi: '' });
+            const [msg, setMsg] = useState({ text: '', type: '' });
+            const availableUnits = user.unit === 'ALL' ? masterUnits : [user.unit];
 
-        function AuditModule({ onSave, user, masterUnits }) {
-            const [activeBundle, setActiveBundle] = useState('CAUTI');
-            const [bundleRows, setBundleRows] = useState({ CAUTI: [], CLABSI: [], VAP: [], IDO: [] });
-            const [metadata, setMetadata] = useState({ tanggal: new Date().toISOString().split('T')[0], unit: user.unit !== 'ALL' ? user.unit : '', auditor: user.name });
-            const [statusMsg, setStatusMsg] = useState(null);
+            useEffect(() => {
+                if (editPayload) setForm(editPayload);
+            }, [editPayload]);
 
             const handleSave = () => {
-                if (!metadata.unit) {
-                    setStatusMsg({ type: 'error', text: 'Pilih Unit Terlebih Dahulu!' });
-                    setTimeout(() => setStatusMsg(null), 3000);
-                    return;
+                if (!form.bulan || !form.unit) { 
+                    setMsg({text: 'Bulan dan Unit Wajib diisi!', type: 'error'}); 
+                    setTimeout(() => setMsg({text: '', type: ''}), 3000);
+                    return; 
                 }
-                onSave({ id: Date.now(), status: user.role === 'IPCLN' ? 'DRAFT' : 'VERIFIED', metadata, data: bundleRows });
-                setBundleRows({ CAUTI: [], CLABSI: [], VAP: [], IDO: [] });
-                setStatusMsg({ type: 'success', text: user.role === 'IPCLN' ? 'Audit Dikirim sebagai Draft!' : 'Data Audit Berhasil Disimpan!' });
-                setTimeout(() => setStatusMsg(null), 3000);
+                const payload = {
+                    ...form, id: editPayload ? editPayload.id : Date.now(),
+                    hariRawat: Number(form.hariRawat)||0, hariKateter: Number(form.hariKateter)||0, 
+                    hariCVC: Number(form.hariCVC)||0, hariVentilator: Number(form.hariVentilator)||0, 
+                    hariIVLine: Number(form.hariIVLine)||0, jumlahOperasi: Number(form.jumlahOperasi)||0
+                };
+                
+                const filtered = denominators.filter(d => !(d.bulan === form.bulan && d.unit === form.unit && d.id !== payload.id));
+                setDenominators([...filtered, payload]);
+                
+                setMsg({text: editPayload ? 'Data Denominator Diperbarui!' : 'Data Denominator Berhasil Disimpan!', type: 'success'});
+                setTimeout(() => { 
+                    setMsg({text: '', type: ''}); 
+                    if(clearEdit) clearEdit();
+                }, 1500);
             };
 
             return (
                 <div className="space-y-6">
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-bold text-slate-800 flex items-center"><i className="fa-solid fa-file-lines text-teal-600 mr-2"></i> Formulir Audit Kepatuhan Bundle</h2>
-                            {statusMsg && <span className={`text-sm px-3 py-1 rounded-full font-medium border ${statusMsg.type === 'success' ? 'text-green-600 bg-green-50 border-green-200' : 'text-red-600 bg-red-50 border-red-200'}`}>{statusMsg.text}</span>}
+                        <h2 className="text-lg font-bold text-slate-800 mb-2 flex items-center">
+                            <i className="fa-solid fa-database text-teal-600 mr-2"></i> Form Input Denominator 
+                        </h2>
+                        <p className="text-sm text-slate-500 mb-6">Wajib diisi setiap akhir bulan oleh IPCLN sebagai pembagi (denominator) dalam perhitungan Incidence Rate (‰).</p>
+                        
+                        {msg.text && (
+                            <div className={`mb-4 p-3 rounded-lg text-sm font-bold border ${msg.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-teal-50 text-teal-700 border-teal-200'}`}>
+                                {msg.text}
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-5 rounded-lg border border-slate-100 mb-6">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Periode (Bulan/Tahun)</label>
+                                <input type="month" value={form.bulan} onChange={e => setForm({...form, bulan: e.target.value})} className="w-full border border-slate-300 rounded-md p-2 text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Unit Ruangan</label>
+                                <select value={form.unit} onChange={e => setForm({...form, unit: e.target.value})} disabled={user.unit !== 'ALL'} className="w-full border border-slate-300 rounded-md p-2 text-sm bg-white disabled:bg-slate-100 outline-none">
+                                    <option value="">Pilih Unit...</option>
+                                    {availableUnits.map(u => <option key={u} value={u}>{u}</option>)}
+                                </select>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Tgl Audit</label><input type="date" className="mt-1 w-full border border-slate-300 rounded p-2 text-sm outline-none bg-white" value={metadata.tanggal} onChange={(e) => setMetadata({...metadata, tanggal: e.target.value})} /></div>
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Unit</label><select className="mt-1 w-full border border-slate-300 rounded p-2 text-sm bg-white outline-none" value={metadata.unit} onChange={(e) => setMetadata({...metadata, unit: e.target.value})} disabled={user.unit!=='ALL'}><option value="">Pilih...</option>{(user.unit==='ALL'?masterUnits:[user.unit]).map(u => <option key={u} value={u}>{u}</option>)}</select></div>
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase">Auditor</label><input type="text" className="mt-1 w-full bg-slate-100 border border-slate-300 rounded p-2 text-sm" value={metadata.auditor} disabled /></div>
-                        </div>
-                        <div className="border-b border-slate-200 mb-4 flex space-x-2">
-                            {Object.keys(AUDIT_BUNDLES).map(k => (
-                                <button key={k} onClick={()=>setActiveBundle(k)} className={`pb-3 px-4 font-bold text-sm border-b-2 ${activeBundle===k ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>{k} {bundleRows[k].length>0 && `(${bundleRows[k].length})`}</button>
+
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                            {[
+                                {k:'hariRawat', l:'Total Hari Rawat', c:'bg-slate-100'}, {k:'hariKateter', l:'Total Hari Kateter (ISK)', c:'bg-blue-50'},
+                                {k:'hariCVC', l:'Total Hari CVC (IADP)', c:'bg-indigo-50'}, {k:'hariVentilator', l:'Total Hari Ventilator (VAP)', c:'bg-purple-50'},
+                                {k:'hariIVLine', l:'Total Hari IV Line (Plebitis)', c:'bg-orange-50'}, {k:'jumlahOperasi', l:'Total Tindakan Op (IDO)', c:'bg-yellow-50'}
+                            ].map(item => (
+                                <div key={item.k} className={`p-4 rounded-lg border border-slate-200 ${item.c}`}>
+                                    <label className="block text-xs font-semibold text-slate-700 mb-2">{item.l}</label>
+                                    <input type="number" min="0" value={form[item.k]} onChange={e => setForm({...form, [item.k]: e.target.value})} className="w-full border border-slate-300 rounded-md p-2 text-lg font-bold text-center outline-none focus:ring-2 focus:ring-teal-500" placeholder="0" />
+                                </div>
                             ))}
                         </div>
-                        <AuditTable config={AUDIT_BUNDLES[activeBundle]} rows={bundleRows[activeBundle]} setRows={(r) => setBundleRows({...bundleRows, [activeBundle]: r})} />
-                        <div className="mt-6 flex justify-end"><button onClick={handleSave} className={`flex items-center px-6 py-2 text-white rounded font-bold transition ${user.role === 'IPCLN' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-teal-600 hover:bg-teal-700'}`}><i className="fa-solid fa-floppy-disk mr-2"></i> {user.role === 'IPCLN' ? 'Kirim ke IPCN (Draft)' : 'Simpan Audit'}</button></div>
+                        <div className="flex justify-end">
+                            <button onClick={handleSave} className="flex items-center px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 shadow-md font-bold transition">
+                                <i className="fa-solid fa-floppy-disk mr-2"></i> {editPayload ? 'Perbarui Denominator' : 'Simpan Denominator'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             );
         }
 
-        function AuditTable({ config, rows, setRows }) {
-            const addRow = () => {
-                let r = { id: Date.now(), name: '', nrm: '', answers: {} };
-                config.columns.forEach(c => r.answers[c.key] = null);
-                setRows([...rows, r]);
-            };
-            const setAns = (id, k, v) => setRows(rows.map(r => r.id===id ? {...r, answers: {...r.answers, [k]: v}} : r));
+        function VerifikasiModule({ audits, surveilans, kewaspadaan, setAudits, setSurveilans, setKewaspadaan }) {
+            const [preview, setPreview] = useState(null);
 
-            return (
-                <div>
-                    <div className="overflow-x-auto border border-slate-200 rounded-lg min-h-[250px]">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-50">
-                                <tr>
-                                    <th className="p-3 w-48">Pasien</th>
-                                    {config.columns.map(c=>(
-                                        <th key={c.key} className="p-2 text-center text-xs font-bold relative group cursor-help">
-                                            <span className="border-b border-dotted border-slate-400">{c.label}</span>
-                                            <div className="hidden group-hover:block absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 p-3 bg-slate-800 text-white text-[11px] rounded shadow-lg z-50 font-normal text-left whitespace-normal leading-relaxed before:content-[''] before:absolute before:bottom-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-b-slate-800">
-                                                {c.desc}
-                                            </div>
-                                        </th>
-                                    ))}
-                                    <th className="p-2 text-center">%</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-200 bg-white">
-                                {rows.length === 0 && (<tr><td colSpan={config.columns.length + 3} className="px-4 py-8 text-center text-slate-400 italic">Klik tombol "Tambah Pasien" untuk mulai observasi bundle.</td></tr>)}
-                                {rows.map((r,i) => (
-                                    <tr key={r.id}>
-                                        <td className="p-2"><input placeholder="Nama Pasien" value={r.name} onChange={e=>{let nr=[...rows];nr[i].name=e.target.value;setRows(nr)}} className="w-full text-xs border rounded p-1 mb-1 outline-none focus:border-teal-500"/><input placeholder="No. RM" value={r.nrm} onChange={e=>{let nr=[...rows];nr[i].nrm=e.target.value;setRows(nr)}} className="w-full text-xs border rounded p-1 bg-slate-50 outline-none focus:border-teal-500"/></td>
-                                        {config.columns.map(c => (
-                                            <td key={c.key} className="p-1 align-middle text-center">
-                                                <div className="flex justify-center space-x-1">
-                                                    <button onClick={()=>setAns(r.id,c.key,'Y')} className={`px-2 py-1 border rounded text-xs font-bold ${r.answers[c.key]==='Y'?'bg-green-500 text-white border-green-600':'bg-white text-slate-400'}`}>Y</button>
-                                                    <button onClick={()=>setAns(r.id,c.key,'T')} className={`px-2 py-1 border rounded text-xs font-bold ${r.answers[c.key]==='T'?'bg-red-500 text-white border-red-600':'bg-white text-slate-400'}`}>T</button>
-                                                    <button onClick={()=>setAns(r.id,c.key,'NA')} className={`text-[10px] px-1 ${r.answers[c.key]==='NA'?'font-bold text-slate-800 underline':'text-slate-400'}`}>N/A</button>
-                                                </div>
-                                            </td>
-                                        ))}
-                                        <td className="p-2 text-center font-bold text-slate-700 bg-slate-50">{calculateCompliance(r.answers)}%</td>
-                                        <td className="p-2 text-center"><button onClick={()=>setRows(rows.filter(x=>x.id!==r.id))} className="text-red-400"><i className="fa-solid fa-trash"></i></button></td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    <button onClick={addRow} className="mt-3 text-sm font-bold text-teal-700 bg-teal-50 px-3 py-2 rounded-lg flex items-center border border-teal-200 hover:bg-teal-100"><i className="fa-solid fa-plus mr-2"></i>Tambah Pasien</button>
-                </div>
-            );
-        }
-
-        function VerifikasiModule({ audits, surveilans, setAudits, setSurveilans }) {
             const verify = (id, type) => {
                 if(type==='A') setAudits(audits.map(a => a.id === id ? {...a, status: 'VERIFIED'} : a));
                 if(type==='S') setSurveilans(surveilans.map(s => s.id === id ? {...s, status: 'VERIFIED'} : s));
+                if(type==='K') setKewaspadaan(kewaspadaan.map(k => k.id === id ? {...k, status: 'VERIFIED'} : k));
+                setPreview(null);
             };
+            
             const dAud = audits.filter(a => a.status === 'DRAFT');
             const dSurv = surveilans.filter(s => s.status === 'DRAFT');
+            const dKewas = kewaspadaan.filter(k => k.status === 'DRAFT');
+
+            const renderPreviewModal = () => {
+                if (!preview) return null;
+                const { item, type } = preview;
+                
+                return (
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-fade-in">
+                            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                                <h3 className="font-bold text-slate-800 text-lg flex items-center">
+                                    <i className="fa-solid fa-magnifying-glass text-teal-600 mr-2"></i> Preview Data {type}
+                                </h3>
+                                <button onClick={() => setPreview(null)} className="text-slate-400 hover:text-red-500 transition text-xl"><i className="fa-solid fa-times"></i></button>
+                            </div>
+                            <div className="p-6 overflow-y-auto flex-1 bg-white custom-scrollbar">
+                                <div className="mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200 grid grid-cols-2 gap-4 text-sm">
+                                    <div><span className="text-slate-500 block text-xs font-bold uppercase">Unit / Ruangan</span><span className="font-semibold text-slate-800">{item.metadata.unit}</span></div>
+                                    <div><span className="text-slate-500 block text-xs font-bold uppercase">Pelapor (IPCLN)</span><span className="font-semibold text-slate-800">{item.metadata.ipcln || item.metadata.auditor}</span></div>
+                                    <div><span className="text-slate-500 block text-xs font-bold uppercase">Periode / Tanggal</span><span className="font-semibold text-slate-800">{item.metadata.bulan || item.metadata.tanggal}</span></div>
+                                    {type === 'Kewaspadaan' && <div><span className="text-slate-500 block text-xs font-bold uppercase">Kategori Audit</span><span className="font-semibold text-purple-700">{KEWASPADAAN_CONFIG[item.auditType]?.title}</span></div>}
+                                </div>
+
+                                {type === 'Surveilans' && (
+                                    <div className="space-y-4">
+                                        {Object.keys(item.data).filter(k => item.data[k].length > 0).length === 0 && <p className="text-slate-500 italic text-center py-4">Nihil Kasus (0 Kasus Dilaporkan)</p>}
+                                        {Object.keys(item.data).map(k => item.data[k].length > 0 && (
+                                            <div key={k} className="border border-slate-200 rounded-lg overflow-hidden">
+                                                <div className="bg-slate-100 px-3 py-2 font-bold text-slate-700 flex justify-between"><span>Kategori: {k}</span><span className="bg-teal-600 text-white text-xs px-2 py-0.5 rounded-full">{item.data[k].length} Kasus</span></div>
+                                                <ul className="divide-y divide-slate-100">
+                                                    {item.data[k].map(p => <li key={p.id} className="p-3 text-sm hover:bg-slate-50"><span className="font-bold text-slate-800">{p.pasien}</span> (RM: {p.nrm}) - <span className="text-slate-600">Patogen: {p.patogen || 'Belum Ada'}</span></li>)}
+                                                </ul>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {type === 'Audit Bundle' && (
+                                    <div className="space-y-4">
+                                        {Object.keys(item.data).filter(k => item.data[k].length > 0).length === 0 && <p className="text-slate-500 italic text-center py-4">Belum ada pasien yang diobservasi.</p>}
+                                        {Object.keys(item.data).map(k => item.data[k].length > 0 && (
+                                            <div key={k} className="border border-slate-200 rounded-lg overflow-hidden">
+                                                <div className="bg-slate-100 px-3 py-2 font-bold text-slate-700 flex justify-between"><span>Bundle: {k}</span><span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">{item.data[k].length} Observasi</span></div>
+                                                <ul className="divide-y divide-slate-100">
+                                                    {item.data[k].map(p => (
+                                                        <li key={p.id} className="p-3 text-sm hover:bg-slate-50">
+                                                            <div className="flex justify-between items-center mb-2">
+                                                                <span className="font-bold text-slate-800">{p.name} <span className="font-normal text-slate-500">(RM: {p.nrm})</span></span>
+                                                                <span className={`px-2 py-1 rounded text-xs font-bold ${calculateCompliance(p.answers) >= 85 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>Kepatuhan: {calculateCompliance(p.answers)}%</span>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-1 mt-1 text-[11px] text-slate-600">
+                                                                {Object.entries(p.answers).map(([ansKey, ansVal]) => (
+                                                                    <div key={ansKey} className="flex justify-between border-b border-slate-100 pb-1 pr-2">
+                                                                        <span>{AUDIT_BUNDLES[k].columns.find(c=>c.key===ansKey)?.label || ansKey}:</span> 
+                                                                        <span className="font-bold">{ansVal==='Y'?'✅ Ya':ansVal==='T'?'❌ Tidak':'➖ N/A'}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {type === 'Kewaspadaan' && (
+                                    <div className="space-y-4">
+                                        <div className="border border-slate-200 rounded-lg p-4 text-slate-600 bg-slate-50 text-sm">
+                                            <p className="font-bold text-slate-800 mb-2">Rincian Observasi ({KEWASPADAAN_CONFIG[item.auditType]?.title}):</p>
+                                            
+                                            {item.auditType === 'HH' ? (
+                                                <div className="overflow-x-auto mt-2">
+                                                    <table className="w-full text-xs text-left border border-slate-200 bg-white">
+                                                        <thead className="bg-slate-200">
+                                                            <tr><th className="p-2">Profesi</th><th className="p-2">M1</th><th className="p-2">M2</th><th className="p-2">M3</th><th className="p-2">M4</th><th className="p-2">M5</th><th className="p-2">Metode</th></tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-100">
+                                                            {item.data.map((r, i) => (
+                                                                <tr key={i}>
+                                                                    <td className="p-2 font-bold">{r.profesi}</td>
+                                                                    {['m1','m2','m3','m4','m5'].map(m => <td key={m} className="p-2 text-center">{r[m]==='Y'?'✅':r[m]==='T'?'❌':'-'}</td>)}
+                                                                    <td className="p-2 text-slate-500">{r.metode || '-'}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            ) : (
+                                                <div className="mt-2 text-xs space-y-2 pr-2 bg-white border border-slate-200 rounded-lg p-3">
+                                                    {Object.entries(item.data).map(([idx, val]) => {
+                                                        let question = 'Pertanyaan tidak ditemukan';
+                                                        let flatIndex = 0;
+                                                        KEWASPADAAN_CONFIG[item.auditType].sections.forEach(s => {
+                                                            s.items.forEach(i => {
+                                                                if(flatIndex == idx) question = i;
+                                                                flatIndex++;
+                                                            });
+                                                        });
+                                                        return (
+                                                            <div key={idx} className="flex justify-between gap-4 border-b border-slate-100 pb-2">
+                                                                <span className="flex-1">{question}</span>
+                                                                <span className="font-bold whitespace-nowrap">{val==='Y'?'✅ Ya':val==='T'?'❌ Tidak':'➖ N/A'}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end space-x-3">
+                                <button onClick={() => setPreview(null)} className="px-5 py-2.5 rounded-lg text-slate-600 bg-white border border-slate-300 font-bold hover:bg-slate-100 transition">Tutup Preview</button>
+                                <button onClick={() => verify(item.id, type.charAt(0))} className="px-5 py-2.5 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition shadow-md flex items-center"><i className="fa-solid fa-check mr-2"></i> Verifikasi Data Ini</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
 
             return (
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
+                    {renderPreviewModal()}
                     <h2 className="text-lg font-bold flex items-center mb-6"><i className="fa-solid fa-shield-halved text-teal-600 mr-2"></i> Verifikasi Data Draft dari IPCLN</h2>
-                    {dAud.length===0 && dSurv.length===0 ? (
+                    {dAud.length===0 && dSurv.length===0 && dKewas.length===0 ? (
                         <div className="text-center p-8 text-slate-500">
                             <i className="fa-solid fa-circle-check text-5xl text-emerald-400 mb-4 block"></i>
                             <p className="font-bold text-lg">Semua data sudah terverifikasi.</p>
@@ -817,21 +1316,39 @@
                     ) : (
                         <div className="space-y-4">
                             {dSurv.map(s => (
-                                <div key={s.id} className="border-l-4 border-rose-500 bg-rose-50 p-4 rounded flex justify-between items-center shadow-sm">
+                                <div key={s.id} className="border-l-4 border-rose-500 bg-rose-50 p-4 rounded flex flex-col md:flex-row justify-between md:items-center shadow-sm gap-3">
                                     <div>
                                         <p className="font-bold text-sm text-slate-800">[SURVEILANS HAIs] Periode: <span className="text-rose-600">{s.metadata.bulan}</span> | Unit: {s.metadata.unit}</p>
                                         <p className="text-xs text-slate-600 mt-1">Dilaporkan Oleh: {s.metadata.ipcln} pada {s.metadata.tglPengisian}</p>
                                     </div>
-                                    <button onClick={()=>verify(s.id,'S')} className="bg-emerald-600 hover:bg-emerald-700 transition text-white text-xs font-bold px-4 py-2 rounded shadow-sm"><i className="fa-solid fa-check mr-1"></i> Verifikasi Data</button>
+                                    <div className="flex space-x-2">
+                                        <button onClick={()=>setPreview({item: s, type: 'Surveilans'})} className="bg-white border border-slate-300 hover:bg-slate-100 transition text-slate-700 text-xs font-bold px-4 py-2 rounded shadow-sm"><i className="fa-regular fa-eye mr-1"></i> Detail</button>
+                                        <button onClick={()=>verify(s.id,'S')} className="bg-emerald-600 hover:bg-emerald-700 transition text-white text-xs font-bold px-4 py-2 rounded shadow-sm"><i className="fa-solid fa-check mr-1"></i> Verifikasi</button>
+                                    </div>
                                 </div>
                             ))}
                             {dAud.map(a => (
-                                <div key={a.id} className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded flex justify-between items-center shadow-sm">
+                                <div key={a.id} className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded flex flex-col md:flex-row justify-between md:items-center shadow-sm gap-3">
                                     <div>
                                         <p className="font-bold text-sm text-slate-800">[AUDIT BUNDLE] Tanggal Audit: <span className="text-blue-600">{a.metadata.tanggal}</span> | Unit: {a.metadata.unit}</p>
                                         <p className="text-xs text-slate-600 mt-1">Dilaporkan Oleh: {a.metadata.auditor}</p>
                                     </div>
-                                    <button onClick={()=>verify(a.id,'A')} className="bg-emerald-600 hover:bg-emerald-700 transition text-white text-xs font-bold px-4 py-2 rounded shadow-sm"><i className="fa-solid fa-check mr-1"></i> Verifikasi Data</button>
+                                    <div className="flex space-x-2">
+                                        <button onClick={()=>setPreview({item: a, type: 'Audit Bundle'})} className="bg-white border border-slate-300 hover:bg-slate-100 transition text-slate-700 text-xs font-bold px-4 py-2 rounded shadow-sm"><i className="fa-regular fa-eye mr-1"></i> Detail</button>
+                                        <button onClick={()=>verify(a.id,'A')} className="bg-emerald-600 hover:bg-emerald-700 transition text-white text-xs font-bold px-4 py-2 rounded shadow-sm"><i className="fa-solid fa-check mr-1"></i> Verifikasi</button>
+                                    </div>
+                                </div>
+                            ))}
+                            {dKewas.map(k => (
+                                <div key={k.id} className="border-l-4 border-purple-500 bg-purple-50 p-4 rounded flex flex-col md:flex-row justify-between md:items-center shadow-sm gap-3">
+                                    <div>
+                                        <p className="font-bold text-sm text-slate-800">[KEWASPADAAN - {k.auditType}] Tanggal: <span className="text-purple-600">{k.metadata.tanggal}</span> | Unit: {k.metadata.unit}</p>
+                                        <p className="text-xs text-slate-600 mt-1">Dilaporkan Oleh: {k.metadata.auditor}</p>
+                                    </div>
+                                    <div className="flex space-x-2">
+                                        <button onClick={()=>setPreview({item: k, type: 'Kewaspadaan'})} className="bg-white border border-slate-300 hover:bg-slate-100 transition text-slate-700 text-xs font-bold px-4 py-2 rounded shadow-sm"><i className="fa-regular fa-eye mr-1"></i> Detail</button>
+                                        <button onClick={()=>verify(k.id,'K')} className="bg-emerald-600 hover:bg-emerald-700 transition text-white text-xs font-bold px-4 py-2 rounded shadow-sm"><i className="fa-solid fa-check mr-1"></i> Verifikasi</button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -840,106 +1357,213 @@
             );
         }
 
-        function DashboardModule({ audits, surveilans, denominators, units }) {
-            const [filterMonth, setFilterMonth] = useState(new Date().toISOString().slice(0,7)); 
-            const [filterUnit, setFilterUnit] = useState('ALL');
+        function RiwayatModule({ audits, surveilans, kewaspadaan, denominators, setAudits, setSurveilans, setKewaspadaan, setDenominators, onEdit }) {
+            const [activeTab, setActiveTab] = useState('surveilans');
 
-            const { rateData, compData, kpi } = useMemo(() => {
-                const vSurv = surveilans.filter(s => s.status === 'VERIFIED' && s.metadata.bulan === filterMonth && (filterUnit === 'ALL' || s.metadata.unit === filterUnit));
-                const vAud = audits.filter(a => a.status === 'VERIFIED' && a.metadata.tanggal.startsWith(filterMonth) && (filterUnit === 'ALL' || a.metadata.unit === filterUnit));
-                
-                let den = { hr:0, kat:0, cvc:0, vent:0, iv:0, op:0 };
-                denominators.filter(d => d.bulan === filterMonth && (filterUnit === 'ALL' || d.unit === filterUnit)).forEach(d => {
-                    den.hr += d.hariRawat; den.kat += d.hariKateter; den.cvc += d.hariCVC; den.vent += d.hariVentilator; den.iv += d.hariIVLine; den.op += d.jumlahOperasi;
-                });
-
-                let c = { isk:0, iadp:0, vap:0, pleb:0, ido:0 };
-                vSurv.forEach(s => { c.isk += s.data.ISK.length; c.iadp += s.data.IADP.length; c.vap += s.data.VAP.length; c.pleb += s.data.PLEBITIS.length; c.ido += s.data.IDO.length; });
-
-                const rData = [
-                    { name: 'ISK (‰)', rate: den.kat>0 ? Number(((c.isk/den.kat)*1000).toFixed(2)) : 0, target: TARGETS.ISK, case: c.isk, dn: den.kat },
-                    { name: 'IADP (‰)', rate: den.cvc>0 ? Number(((c.iadp/den.cvc)*1000).toFixed(2)) : 0, target: TARGETS.IADP, case: c.iadp, dn: den.cvc },
-                    { name: 'VAP (‰)', rate: den.vent>0 ? Number(((c.vap/den.vent)*1000).toFixed(2)) : 0, target: TARGETS.VAP, case: c.vap, dn: den.vent },
-                    { name: 'Plebitis (‰)', rate: den.iv>0 ? Number(((c.pleb/den.iv)*1000).toFixed(2)) : 0, target: TARGETS.PLEBITIS, case: c.pleb, dn: den.iv },
-                    { name: 'IDO (%)', rate: den.op>0 ? Number(((c.ido/den.op)*100).toFixed(2)) : 0, target: TARGETS.IDO, case: c.ido, dn: den.op },
-                ];
-
-                let tComp=0, cntAud=0;
-                const processA = (arr) => arr.forEach(r => { let score = calculateCompliance(r.answers); if(score>0){ tComp+=score; cntAud++; } });
-                vAud.forEach(a => { processA(a.data.CAUTI||[]); processA(a.data.CLABSI||[]); processA(a.data.VAP||[]); processA(a.data.IDO||[]); });
-
-                return { rateData: rData, compData: [], kpi: { cases: c.isk+c.iadp+c.vap+c.pleb+c.ido, avgComp: cntAud>0 ? Math.round(tComp/cntAud) : 0, noDen: (den.kat+den.cvc+den.vent+den.iv+den.op === 0) } };
-            }, [audits, surveilans, denominators, filterMonth, filterUnit]);
+            const handleDelete = (id, type) => {
+                if(!window.confirm('Yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.')) return;
+                if(type === 'S') setSurveilans(surveilans.filter(x=>x.id!==id));
+                if(type === 'A') setAudits(audits.filter(x=>x.id!==id));
+                if(type === 'K') setKewaspadaan(kewaspadaan.filter(x=>x.id!==id));
+                if(type === 'D') setDenominators(denominators.filter(x=>x.id!==id));
+            };
 
             return (
-                <div className="space-y-6">
-                    <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
-                        <div>
-                            <h2 className="text-2xl font-bold text-slate-800">Dashboard Mutu PPI</h2>
-                            <p className="text-sm text-slate-500">Analisis Insidence Rate HAIs vs Target Batas Nasional.</p>
-                        </div>
-                        <div className="flex space-x-2 bg-white p-1 rounded-lg border shadow-sm items-center h-fit">
-                            <i className="fa-solid fa-filter text-slate-400 ml-2"></i>
-                            <input type="month" value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} className="border-none bg-slate-50 px-2 py-1 rounded text-sm font-bold outline-none text-slate-700" />
-                            <select value={filterUnit} onChange={e=>setFilterUnit(e.target.value)} className="border-none bg-slate-50 px-2 py-1 rounded text-sm font-bold outline-none text-slate-700">
-                                <option value="ALL">Semua Unit</option>
-                                {units.map(u => <option key={u} value={u}>{u}</option>)}
-                            </select>
-                        </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
+                        <i className="fa-solid fa-clock-rotate-left text-teal-600 mr-2"></i> Kelola Riwayat Data Mutu
+                    </h2>
+                    
+                    <div className="border-b border-slate-200 mb-6 flex space-x-6 overflow-x-auto">
+                        {[
+                            {id: 'surveilans', label: 'Surveilans HAIs'},
+                            {id: 'audit', label: 'Audit Bundle'},
+                            {id: 'kewaspadaan', label: 'Kewaspadaan Standar'},
+                            {id: 'denominator', label: 'Denominator'}
+                        ].map(t => (
+                            <button key={t.id} onClick={()=>setActiveTab(t.id)} className={`pb-3 font-bold text-sm transition whitespace-nowrap ${activeTab===t.id ? 'border-b-2 border-teal-600 text-teal-700' : 'text-slate-500 hover:text-slate-700'}`}>
+                                {t.label}
+                            </button>
+                        ))}
                     </div>
 
-                    {kpi.noDen && (
-                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start text-amber-800 shadow-sm animate-pulse">
-                            <i className="fa-solid fa-circle-exclamation text-xl mr-3 shrink-0 mt-0.5"></i>
-                            <div>
-                                <h4 className="font-bold text-sm">Peringatan: Data Denominator (Hari Alat) Periode Ini Belum Tersedia</h4>
-                                <p className="text-xs mt-1">Sistem mendeteksi bahwa total hari terpasang alat (pembagi) adalah 0 pada periode/unit yang dipilih. <b>Tingkat Insiden / Rate (‰) tidak dapat dihitung dengan benar jika nilai pembagi kosong.</b> Harap tugaskan IPCLN untuk menginput Denominator akhir bulan melalui menu Denominator.</p>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left border border-slate-200 rounded-lg">
+                            <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th className="p-3 font-semibold text-slate-600">ID / Tanggal</th>
+                                    <th className="p-3 font-semibold text-slate-600">Unit</th>
+                                    <th className="p-3 font-semibold text-slate-600">Info / Pelapor</th>
+                                    <th className="p-3 font-semibold text-slate-600 text-center">Status</th>
+                                    <th className="p-3 font-semibold text-slate-600 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 bg-white">
+                                {activeTab === 'surveilans' && surveilans.map(s => (
+                                    <tr key={s.id} className="hover:bg-slate-50">
+                                        <td className="p-3 font-medium text-slate-800">Periode: {s.metadata.bulan}</td><td className="p-3 text-slate-600">{s.metadata.unit}</td><td className="p-3 text-slate-600">{s.metadata.ipcln}</td>
+                                        <td className="p-3 text-center"><span className={`text-[10px] px-2 py-1 rounded-full font-bold ${s.status==='VERIFIED'?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}`}>{s.status}</span></td>
+                                        <td className="p-3 text-center space-x-2">
+                                            <button onClick={()=>onEdit('surveilans', s)} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition" title="Edit"><i className="fa-solid fa-pen"></i></button>
+                                            <button onClick={()=>handleDelete(s.id, 'S')} className="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="Hapus"><i className="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {activeTab === 'audit' && audits.map(a => (
+                                    <tr key={a.id} className="hover:bg-slate-50">
+                                        <td className="p-3 font-medium text-slate-800">{a.metadata.tanggal}</td><td className="p-3 text-slate-600">{a.metadata.unit}</td><td className="p-3 text-slate-600">{a.metadata.auditor}</td>
+                                        <td className="p-3 text-center"><span className={`text-[10px] px-2 py-1 rounded-full font-bold ${a.status==='VERIFIED'?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}`}>{a.status}</span></td>
+                                        <td className="p-3 text-center space-x-2">
+                                            <button onClick={()=>onEdit('audit', a)} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition" title="Edit"><i className="fa-solid fa-pen"></i></button>
+                                            <button onClick={()=>handleDelete(a.id, 'A')} className="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="Hapus"><i className="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {activeTab === 'kewaspadaan' && kewaspadaan.map(k => (
+                                    <tr key={k.id} className="hover:bg-slate-50">
+                                        <td className="p-3 font-medium text-slate-800">{k.metadata.tanggal}</td><td className="p-3 text-slate-600">{k.metadata.unit}</td><td className="p-3 text-slate-600">{KEWASPADAAN_CONFIG[k.auditType]?.title || k.auditType} - {k.metadata.auditor}</td>
+                                        <td className="p-3 text-center"><span className={`text-[10px] px-2 py-1 rounded-full font-bold ${k.status==='VERIFIED'?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}`}>{k.status}</span></td>
+                                        <td className="p-3 text-center space-x-2">
+                                            <button onClick={()=>onEdit('kewaspadaan', k)} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition" title="Edit"><i className="fa-solid fa-pen"></i></button>
+                                            <button onClick={()=>handleDelete(k.id, 'K')} className="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="Hapus"><i className="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {activeTab === 'denominator' && denominators.map(d => (
+                                    <tr key={d.id} className="hover:bg-slate-50">
+                                        <td className="p-3 font-medium text-slate-800">Periode: {d.bulan}</td><td className="p-3 text-slate-600">{d.unit}</td><td className="p-3 text-slate-600">Rawat: {d.hariRawat} | Ops: {d.jumlahOperasi}</td>
+                                        <td className="p-3 text-center">-</td>
+                                        <td className="p-3 text-center space-x-2">
+                                            <button onClick={()=>onEdit('denominator', d)} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition" title="Edit"><i className="fa-solid fa-pen"></i></button>
+                                            <button onClick={()=>handleDelete(d.id, 'D')} className="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="Hapus"><i className="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        
+                        {activeTab === 'surveilans' && surveilans.length === 0 && <div className="p-6 text-center text-slate-400 italic text-sm">Tidak ada data surveilans.</div>}
+                        {activeTab === 'audit' && audits.length === 0 && <div className="p-6 text-center text-slate-400 italic text-sm">Tidak ada data audit bundle.</div>}
+                        {activeTab === 'kewaspadaan' && kewaspadaan.length === 0 && <div className="p-6 text-center text-slate-400 italic text-sm">Tidak ada data audit kewaspadaan.</div>}
+                        {activeTab === 'denominator' && denominators.length === 0 && <div className="p-6 text-center text-slate-400 italic text-sm">Tidak ada data denominator.</div>}
+                    </div>
+                </div>
+            );
+        }
+
+        function MasterDataModule({ units, setUnits, deleteUnit, users, setUsers, deleteUser }) {
+            const [activeTab, setActiveTab] = useState('users');
+            const [uName, setUName] = useState('');
+            const [uRole, setURole] = useState('IPCLN');
+            const [uUnit, setUUnit] = useState('');
+            const [uPass, setUPass] = useState('');
+            const [newUnit, setNewUnit] = useState('');
+            const [editUserId, setEditUserId] = useState(null);
+
+            const handleAddUser = (e) => {
+                e.preventDefault();
+                if(uName && uPass) {
+                    if (editUserId) {
+                        setUsers(users.map(u => u.id === editUserId ? { ...u, name: uName, role: uRole, unit: uRole === 'IPCLN' ? uUnit : 'ALL', password: uPass } : u));
+                        setEditUserId(null);
+                    } else {
+                        setUsers([...users, { id: Date.now(), name: uName, role: uRole, unit: uRole === 'IPCLN' ? uUnit : 'ALL', password: uPass }]);
+                    }
+                    setUName(''); setUPass(''); setUUnit(''); setURole('IPCLN');
+                }
+            };
+
+            const handleEditClick = (user) => {
+                setEditUserId(user.id);
+                setUName(user.name);
+                setURole(user.role);
+                setUUnit(user.unit === 'ALL' ? '' : user.unit);
+                setUPass(user.password);
+            };
+
+            const handleCancelEdit = () => {
+                setEditUserId(null);
+                setUName(''); setUPass(''); setUUnit(''); setURole('IPCLN');
+            };
+
+            const handleAddUnit = (e) => {
+                e.preventDefault();
+                if (newUnit.trim()) {
+                    setUnits([...units, { id: Date.now(), name: newUnit.trim() }]);
+                    setNewUnit('');
+                }
+            };
+
+            return (
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
+                        <i className="fa-solid fa-gear text-teal-600 mr-2"></i> Manajemen Master Data & Hak Akses
+                    </h2>
+                    <div className="border-b border-slate-200 mb-6">
+                        <div className="flex space-x-6">
+                            <button onClick={() => setActiveTab('users')} className={`pb-3 font-medium text-sm transition ${activeTab==='users' ? 'border-b-2 border-teal-500 text-teal-600' : 'text-slate-500'}`}>Manajemen User</button>
+                            <button onClick={() => setActiveTab('units')} className={`pb-3 font-medium text-sm transition ${activeTab==='units' ? 'border-b-2 border-teal-500 text-teal-600' : 'text-slate-500'}`}>Manajemen Unit / Ruangan</button>
+                        </div>
+                    </div>
+                    {activeTab === 'users' && (
+                        <div className="grid md:grid-cols-3 gap-8">
+                            <div className="md:col-span-1 bg-slate-50 p-4 rounded-lg border border-slate-100 h-fit">
+                                <h3 className="text-sm font-bold text-slate-700 mb-4">{editUserId ? 'Edit Pengguna' : 'Tambah Pengguna Baru'}</h3>
+                                <form onSubmit={handleAddUser} className="space-y-3">
+                                    <div><label className="text-xs font-semibold">Nama Lengkap</label><input type="text" required value={uName} onChange={e=>setUName(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none focus:border-teal-500 bg-white" /></div>
+                                    <div><label className="text-xs font-semibold">Role Akses</label>
+                                        <select value={uRole} onChange={e=>{setURole(e.target.value); if(e.target.value!=='IPCLN') setUUnit('ALL');}} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none bg-white">
+                                            <option value="IPCLN">IPCLN (Perawat Ruangan)</option><option value="IPCN">IPCN (Komite PPI)</option><option value="MANAJEMEN">MANAJEMEN (Direksi)</option>
+                                        </select>
+                                    </div>
+                                    {uRole === 'IPCLN' && <div><label className="text-xs font-semibold">Penempatan Unit</label>
+                                        <select value={uUnit} required onChange={e=>setUUnit(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none bg-white">
+                                            <option value="">Pilih Unit...</option>
+                                            {units.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
+                                        </select>
+                                    </div>}
+                                    <div><label className="text-xs font-semibold">Password</label><input type="text" required value={uPass} onChange={e=>setUPass(e.target.value)} className="w-full mt-1 border border-slate-300 rounded p-2 text-sm outline-none focus:border-teal-500 bg-white" /></div>
+                                    <div className="flex space-x-2 mt-4">
+                                        <button type="submit" className="flex-1 bg-teal-600 text-white font-bold py-2 rounded text-sm hover:bg-teal-700 transition shadow-sm"><i className={`fa-solid ${editUserId ? 'fa-save' : 'fa-plus'} mr-1`}></i> {editUserId ? 'Simpan' : 'Tambah'}</button>
+                                        {editUserId && <button type="button" onClick={handleCancelEdit} className="flex-1 bg-slate-300 text-slate-700 font-bold py-2 rounded text-sm hover:bg-slate-400 transition shadow-sm"><i className="fa-solid fa-times mr-1"></i> Batal</button>}
+                                    </div>
+                                </form>
+                            </div>
+                            <div className="md:col-span-2 overflow-x-auto">
+                                <table className="w-full text-sm text-left border-collapse border border-slate-200 rounded-lg">
+                                    <thead className="bg-slate-50 text-slate-600 border-b"><tr><th className="p-3">Nama</th><th className="p-3">Role</th><th className="p-3">Unit</th><th className="p-3">Password</th><th className="p-3 text-center">Aksi</th></tr></thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {users.map(u => (
+                                            <tr key={u.id} className="hover:bg-slate-50">
+                                                <td className="p-3 font-medium">{u.name}</td><td className="p-3"><span className="bg-slate-200 px-2 py-1 rounded text-xs">{u.role}</span></td>
+                                                <td className="p-3">{u.unit}</td><td className="p-3 text-slate-400">••••{u.password.slice(-2)}</td>
+                                                <td className="p-3 text-center space-x-2">
+                                                    <button onClick={() => handleEditClick(u)} className="text-blue-500 hover:bg-blue-50 p-1 rounded transition" title="Edit User"><i className="fa-solid fa-pen-to-square"></i></button>
+                                                    <button onClick={() => {if(window.confirm('Hapus pengguna ini?')) deleteUser(u.id, users.filter(x=>x.id!==u.id))}} className="text-red-500 hover:bg-red-50 p-1 rounded transition" title="Hapus User"><i className="fa-solid fa-trash"></i></button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white border border-slate-200 p-5 rounded-xl flex items-center space-x-4 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-50 rounded-bl-full -mr-4 -mt-4 z-0"></div>
-                            <div className="p-3 bg-emerald-100 rounded-lg shadow-sm z-10"><i className="fa-solid fa-clipboard-check text-emerald-600 text-xl"></i></div>
-                            <div className="z-10"><p className="text-xs font-bold text-slate-500 uppercase">Rata-rata Kepatuhan Bundle</p><h4 className="text-2xl font-bold text-emerald-700">{kpi.avgComp}%</h4></div>
+                    {activeTab === 'units' && (
+                        <div className="max-w-md">
+                            <form onSubmit={handleAddUnit} className="flex space-x-2 mb-6">
+                                <input type="text" required value={newUnit} onChange={e=>setNewUnit(e.target.value)} placeholder="Nama Unit (Mis: IGD, NICU)..." className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-teal-500" />
+                                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700 shadow-sm">Tambah</button>
+                            </form>
+                            <ul className="border border-slate-200 rounded-lg divide-y divide-slate-200">
+                                {units.map(u => (
+                                    <li key={u.id} className="flex justify-between items-center p-3 text-sm hover:bg-slate-50">
+                                        <span className="font-medium text-slate-700">{u.name}</span>
+                                        <button onClick={() => {if(window.confirm('Hapus unit ini?')) deleteUnit(u.id, units.filter(x=>x.id!==u.id))}} className="text-red-500 hover:bg-red-50 p-1 rounded transition"><i className="fa-solid fa-trash"></i></button>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
-                        <div className="bg-white border border-slate-200 p-5 rounded-xl flex items-center space-x-4 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-rose-50 rounded-bl-full -mr-4 -mt-4 z-0"></div>
-                            <div className="p-3 bg-rose-100 rounded-lg shadow-sm z-10"><i className="fa-solid fa-chart-line text-rose-600 text-xl"></i></div>
-                            <div className="z-10"><p className="text-xs font-bold text-slate-500 uppercase">Total Kasus Infeksi (HAIs)</p><h4 className="text-2xl font-bold text-rose-700">{kpi.cases} Kasus</h4></div>
-                        </div>
-                        <div className="bg-white border border-slate-200 p-5 rounded-xl flex items-center space-x-4 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-blue-50 rounded-bl-full -mr-4 -mt-4 z-0"></div>
-                            <div className="p-3 bg-blue-100 rounded-lg shadow-sm z-10"><i className="fa-solid fa-database text-blue-600 text-xl"></i></div>
-                            <div className="z-10"><p className="text-xs font-bold text-slate-500 uppercase">Status Kelengkapan Data</p><h4 className={`text-lg font-bold ${kpi.noDen ? 'text-amber-600' : 'text-blue-700'}`}>{kpi.noDen ? 'Incomplete (No Denominator)' : 'Siap Cetak Laporan'}</h4></div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mt-6">
-                        <h3 className="text-base font-bold text-slate-800 mb-6 flex items-center">
-                            <i className="fa-solid fa-chart-simple text-teal-600 mr-2"></i> Grafik Insidence Rate HAIs vs Target Batas Atas RS
-                        </h3>
-                        <div className="h-80 w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={rateData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                    <XAxis dataKey="name" tick={{fontSize: 12, fill: '#475569'}} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{fontSize: 12, fill: '#475569'}} axisLine={false} tickLine={false} />
-                                    <RechartsTooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} formatter={(val, name, props) => { if(name==='Target Maks (RS)') return [val, 'Batas Target']; return [`${val} (Jml Kasus: ${props.payload.case} | Hr Alat: ${props.payload.dn})`, 'Rate Insiden']; }} />
-                                    <Legend wrapperStyle={{fontSize: '12px'}} />
-                                    <Bar dataKey="rate" name="Rate Insiden Aktual" barSize={50} radius={[4, 4, 0, 0]}>
-                                        {rateData.map((e, i) => <Cell key={i} fill={e.rate > e.target ? '#ef4444' : '#14b8a6'} />)}
-                                    </Bar>
-                                    <Line type="step" dataKey="target" name="Target Maks (RS)" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                                </ComposedChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="flex items-center justify-center space-x-6 text-[10px] text-slate-500 mt-4 border-t border-slate-100 pt-4">
-                            <div className="flex items-center"><div className="w-3 h-3 bg-teal-500 rounded-sm mr-2"></div> Di Bawah Target Nasional (Mutu Aman)</div>
-                            <div className="flex items-center"><div className="w-3 h-3 bg-red-500 rounded-sm mr-2"></div> Melebihi Batas Target Nasional (Perlu Evaluasi)</div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             );
         }
